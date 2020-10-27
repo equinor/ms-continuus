@@ -1,0 +1,13 @@
+version: "3.4"
+
+services:
+
+  app:
+    build:
+      context: .
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: development
+      TABEL_KEY: ${TABEL_KEY}
+    volumes:
+      - ./:/app
