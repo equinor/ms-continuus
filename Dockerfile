@@ -1,18 +1,14 @@
-FROM python:3.8-slim
+FROM debian:10-slim
 
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app
-
-RUN pip install poetry
-RUN poetry config virtualenvs.create false
+RUN apt update -y && apt install wget -y
+RUN wget https://packages.microsoft.com/config/debian/10/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && \
+    dpkg -i packages-microsoft-prod.deb && \
+    apt-get update  && \
+    apt-get install -y apt-transport-https && \
+    apt-get update && \
+    apt-get install -y dotnet-sdk-5.0
 
 WORKDIR /app
-
-COPY pyproject.toml poetry.lock ./
-
-RUN poetry install
-
-COPY . .
-
-
-CMD ["app"]
+ADD . .
+RUN dotnet build
+ENTRYPOINT dotnet run
