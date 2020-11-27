@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using System.Collections.Generic;
+using Azure.Storage.Blobs;
 
 namespace ms_continuus
 {
@@ -8,7 +8,7 @@ namespace ms_continuus
     {
         static async Task Main(string[] args)
         {
-            
+
             // Api api = new Api();
 
             // Migration mig = await api.StartMigration();
@@ -17,11 +17,11 @@ namespace ms_continuus
             // var arc = await api.DownloadArchive(440277);
             // var arc = await api.MigrationStatus(440329);
             // Console.WriteLine(arc.ToString());
-            
-            
+
+
             BlobStorage blobStorage = new BlobStorage();
             await blobStorage.CreateContainer();
-            Console.WriteLine("123");
+            await blobStorage.UploadArchive("./tmp/archive-26_11_2020-440277.tar.gz");
         }
     }
 }

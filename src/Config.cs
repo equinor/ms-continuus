@@ -3,9 +3,10 @@ public class Config
 {
 
     public string ORGANIZATION { get; }
+    public string BLOB_CONTAINER { get; }
     public string GITHUB_TOKEN { get; }
     public string STORAGE_KEY { get; }
-    
+
     public Config()
     {
         this.ORGANIZATION = Environment.GetEnvironmentVariable("ORGANIZATION");
@@ -13,14 +14,20 @@ public class Config
         {
             this.ORGANIZATION = "equinor";
         }
-        
+
+        this.BLOB_CONTAINER = Environment.GetEnvironmentVariable("BLOB_CONTAINER");
+        if (this.BLOB_CONTAINER == null)
+        {
+            this.BLOB_CONTAINER = "github-archives";
+        }
+
         this.GITHUB_TOKEN = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
         if (this.GITHUB_TOKEN == null)
         {
             Console.WriteLine(
                 "WARNING: Environment variable 'GITHUB_TOKEN' not set. Will continue operating on public repositories only");
         }
-        
+
         this.STORAGE_KEY = Environment.GetEnvironmentVariable("STORAGE_KEY");
         if (this.STORAGE_KEY == null)
         {

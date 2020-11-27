@@ -25,27 +25,28 @@ namespace ms_continuus
         public Api()
         {
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config.GITHUB_TOKEN}");
-            client.DefaultRequestHeaders.Add("User-Agent","Equinor-Archiver");
+            client.DefaultRequestHeaders.Add("User-Agent", "Equinor-Archiver");
         }
 
         private void SetPreviewHeader(bool preview = true)
         {
-               if (preview)
-                    {
-                        client.DefaultRequestHeaders.Accept.Clear();
-                        client.DefaultRequestHeaders.Add("Accept",previewAcceptHeader);
-                    }else
-                    {
-                        client.DefaultRequestHeaders.Accept.Clear();
-                        client.DefaultRequestHeaders.Add("Accept", defaultAcceptHeader);
-                    }
+            if (preview)
+            {
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Add("Accept", previewAcceptHeader);
+            }
+            else
+            {
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Add("Accept", defaultAcceptHeader);
+            }
         }
 
         private async Task<JsonDocument> GetJson(string url)
         {
             try
             {
-                
+
                 var responseBody = await client.GetAsync(url);
                 responseBody.EnsureSuccessStatusCode();
                 string content = await responseBody.Content.ReadAsStringAsync();
@@ -53,36 +54,36 @@ namespace ms_continuus
             }
             catch (HttpRequestException e)
             {
-                Console.WriteLine("\nException Caught!");	
-                Console.WriteLine("Message :{0} ",e.Message);
+                Console.WriteLine("\nException Caught!");
+                Console.WriteLine("Message :{0} ", e.Message);
                 return null;
             }
         }
-        
+
         public async Task<List<string>> ListRepositories()
         {
             SetPreviewHeader(true);
-                var jsonDocument = await this.GetJson(repo_url);
-                if (jsonDocument == null){Environment.Exit(1);}
-                var repos = jsonDocument.RootElement.EnumerateArray();
-                
-                List<string> repoList = new List<string>();
-                while (repos.MoveNext())
-                {
-                    Console.WriteLine(repos.Current.GetProperty("name"));
-                    repoList.Add(repos.Current.GetProperty("name").ToString());
-                }
+            var jsonDocument = await this.GetJson(repo_url);
+            if (jsonDocument == null) { Environment.Exit(1); }
+            var repos = jsonDocument.RootElement.EnumerateArray();
 
-                return repoList;
+            List<string> repoList = new List<string>();
+            while (repos.MoveNext())
+            {
+                Console.WriteLine(repos.Current.GetProperty("name"));
+                repoList.Add(repos.Current.GetProperty("name").ToString());
+            }
+
+            return repoList;
         }
-        
+
         public async Task<List<Migration>> ListMigrations()
         {
             SetPreviewHeader(true);
             var jsonDocument = await this.GetJson(migrations_url);
-            if (jsonDocument == null){Environment.Exit(1);}
+            if (jsonDocument == null) { Environment.Exit(1); }
             var migrations = jsonDocument.RootElement.EnumerateArray();
-            
+
             List<Migration> migrationsList = new List<Migration>();
             while (migrations.MoveNext())
             {
@@ -96,12 +97,12 @@ namespace ms_continuus
             }
             return migrationsList;
         }
-        
+
         public async Task<Migration> MigrationStatus(int migrationId)
         {
             SetPreviewHeader(true);
             var jsonDocument = await this.GetJson(migrations_url + "/" + migrationId.ToString());
-            if (jsonDocument == null){Environment.Exit(1);}
+            if (jsonDocument == null) { Environment.Exit(1); }
             var migration = jsonDocument.RootElement;
             return new Migration(
                 JsonSerializer.Deserialize<int>(migration.GetProperty("id").GetRawText()),
@@ -109,23 +110,23 @@ namespace ms_continuus
                 migration.GetProperty("state").ToString()
             );
         }
-        
+
         public async Task<string> DownloadArchive(int migrationId)
         {
             Directory.CreateDirectory("./tmp");
             SetPreviewHeader(true);
             var response = await client.GetAsync($"{migrations_url}/{migrationId.ToString()}/archive");
             response.EnsureSuccessStatusCode();
-            var        content   = response.Content;
-            Stream     stream    = await content.ReadAsStreamAsync();
-            string     fileName  = $"./tmp/archive-{DateTime.Now.ToString("dd_MM_yyyy")}-{migrationId.ToString()}.tar.gz";
-            FileStream file      = File.Create(fileName);
+            var content = response.Content;
+            Stream stream = await content.ReadAsStreamAsync();
+            string fileName = $"./tmp/archive-{DateTime.Now.ToString("dd_MM_yyyy")}-{migrationId.ToString()}.tar.gz";
+            FileStream file = File.Create(fileName);
             stream.Seek(0, SeekOrigin.Begin);
             stream.CopyTo(file);
 
             return fileName;
         }
-        
+
         public async Task<Migration> StartMigration()
         {
             SetPreviewHeader(true);
