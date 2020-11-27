@@ -2,12 +2,8 @@ using System.Threading.Tasks;
 using System.Net.Http;
 using System;
 using System.IO;
-using System.Collections;
-using System.Text;
 using System.Text.Json;
-using System.Runtime.CompilerServices;
 using System.Collections.Generic;
-using System.Net.Http.Headers;
 
 namespace ms_continuus
 {
@@ -91,7 +87,8 @@ namespace ms_continuus
                 migrationsList.Add(new Migration(
                         JsonSerializer.Deserialize<int>(migrations.Current.GetProperty("id").GetRawText()),
                         migrations.Current.GetProperty("guid").ToString(),
-                        migrations.Current.GetProperty("state").ToString()
+                        migrations.Current.GetProperty("state").ToString(),
+                        DateTime.Parse(migrations.Current.GetProperty("created_at").ToString())
                     )
                 );
             }
@@ -107,7 +104,8 @@ namespace ms_continuus
             return new Migration(
                 JsonSerializer.Deserialize<int>(migration.GetProperty("id").GetRawText()),
                 migration.GetProperty("guid").ToString(),
-                migration.GetProperty("state").ToString()
+                migration.GetProperty("state").ToString(),
+                DateTime.Parse(migration.GetProperty("created_at").ToString())
             );
         }
 
@@ -115,6 +113,7 @@ namespace ms_continuus
         {
             Directory.CreateDirectory("./tmp");
             SetPreviewHeader(true);
+            Console.WriteLine($"Downloading archive {migrationId}");
             var response = await client.GetAsync($"{migrations_url}/{migrationId.ToString()}/archive");
             response.EnsureSuccessStatusCode();
             var content = response.Content;
@@ -123,6 +122,8 @@ namespace ms_continuus
             FileStream file = File.Create(fileName);
             stream.Seek(0, SeekOrigin.Begin);
             stream.CopyTo(file);
+            file.Close();
+            Console.WriteLine($"Successfully downloaded archive to '{fileName}'");
 
             return fileName;
         }
@@ -137,7 +138,8 @@ namespace ms_continuus
             return new Migration(
                 JsonSerializer.Deserialize<int>(asJson.GetProperty("id").GetRawText()),
                 asJson.GetProperty("guid").ToString(),
-                asJson.GetProperty("state").ToString()
+                asJson.GetProperty("state").ToString(),
+                DateTime.Parse(asJson.GetProperty("created_at").ToString())
             );
         }
     }

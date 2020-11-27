@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using System.Threading;
 
 namespace ms_continuus
 {
@@ -9,19 +11,31 @@ namespace ms_continuus
         static async Task Main(string[] args)
         {
 
-            // Api api = new Api();
+            Api api = new Api();
 
-            // Migration mig = await api.StartMigration();
-            // var temp = await api.ListMigrations();
-            // Console.WriteLine(temp.ToString());
-            // var arc = await api.DownloadArchive(440277);
-            // var arc = await api.MigrationStatus(440329);
-            // Console.WriteLine(arc.ToString());
+            // Migration startedMigration = await api.StartMigration();
+            // Console.WriteLine($"Started a new migration:\n\t{startedMigration}");
 
+            Migration migStatus = await api.MigrationStatus(440781);
+            // Migration migStatus = await api.MigrationStatus(startedMigration.id);
+            int counter = 0;
+            int sleepIntervalSeconds = 5;
+            while (migStatus.state == "exporting")
+            {
+                counter++;
+                Console.WriteLine($"Waiting for migration to be ready... {counter * sleepIntervalSeconds} seconds");
+                Thread.Sleep(sleepIntervalSeconds*1000);
+                migStatus = await api.MigrationStatus(migStatus.id);
+            }
+            Console.WriteLine($"Ready;\n\t{migStatus}");
+
+            string archivePath = await api.DownloadArchive(migStatus.id);
 
             BlobStorage blobStorage = new BlobStorage();
             await blobStorage.CreateContainer();
-            await blobStorage.UploadArchive("./tmp/archive-26_11_2020-440277.tar.gz");
+            await blobStorage.UploadArchive(archivePath);
+            // var blobList = await blobStorage.ListBlobs();
+            Console.WriteLine(123);
         }
     }
 }

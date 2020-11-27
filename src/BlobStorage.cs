@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Azure;
+using System.Collections.Generic;
 
 namespace ms_continuus
 {
@@ -50,8 +51,18 @@ namespace ms_continuus
             using FileStream uploadFileStream = File.OpenRead(filePath);
             await blobClient.UploadAsync(uploadFileStream, true);
             uploadFileStream.Close();
+            Console.WriteLine($"Done!");
         }
 
+        public async Task<List<BlobItem>> ListBlobs()
+        {
+            List<BlobItem> blobList = new List<BlobItem>();
+            await foreach (BlobItem blobItem in containerClient.GetBlobsAsync())
+            {
+                blobList.Add(blobItem);
+            }
+            return blobList;
+        }
         public void DeleteArchive(string filePath)
         {
 
