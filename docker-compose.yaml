@@ -7,4 +7,5 @@ services:
       context: .
     restart: unless-stopped
     environment:
-      
+      BLOB_TAG: weekly
+      WEEKLY_RETENTION: 1

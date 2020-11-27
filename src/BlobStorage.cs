@@ -14,11 +14,11 @@ namespace ms_continuus
         private static BlobServiceClient blobServiceClient = new BlobServiceClient(config.STORAGE_KEY);
         private BlobContainerClient containerClient;
 
-        public async Task CreateContainer()
+        public async Task EnsureContainer()
         {
             try
             {
-                Console.WriteLine($"Creating Blob container '{config.BLOB_CONTAINER}'...");
+                Console.WriteLine($"Ensuring Blob container '{config.BLOB_CONTAINER}'...");
                 BlobContainerClient container = await blobServiceClient.CreateBlobContainerAsync(config.BLOB_CONTAINER);
                 Console.WriteLine("Done!");
                 containerClient = container;
@@ -28,7 +28,6 @@ namespace ms_continuus
             {
                 if (error.ErrorCode.Equals("ContainerAlreadyExists"))
                 {
-                    Console.WriteLine("Container already exists");
                     containerClient = blobServiceClient.GetBlobContainerClient(config.BLOB_CONTAINER);
                     return;
                 }
@@ -47,29 +46,50 @@ namespace ms_continuus
         {
             string fileName = Path.GetFileName(filePath);
             BlobClient blobClient = containerClient.GetBlobClient(fileName);
-            Console.WriteLine($"Uploading to Blob storage as blob:\n\t {config.BLOB_CONTAINER}/{fileName}");
+            Dictionary<string, string> metadata = new Dictionary<string, string>();
+
+            Console.WriteLine($"Uploading to Blob storage as blob:\n" +
+                $"\t{config.BLOB_CONTAINER}/{fileName}\n" +
+                $"\tmetadata: {{ retention: {config.BLOB_TAG} }}");
             using FileStream uploadFileStream = File.OpenRead(filePath);
             await blobClient.UploadAsync(uploadFileStream, true);
             uploadFileStream.Close();
+
+            metadata["retention"] = config.BLOB_TAG;
+            await blobClient.SetMetadataAsync(metadata);
             Console.WriteLine($"Done!");
         }
 
         public async Task<List<BlobItem>> ListBlobs()
         {
             List<BlobItem> blobList = new List<BlobItem>();
-            await foreach (BlobItem blobItem in containerClient.GetBlobsAsync())
+            await foreach (BlobItem blobItem in containerClient.GetBlobsAsync(BlobTraits.All))
             {
                 blobList.Add(blobItem);
             }
             return blobList;
         }
-        public void DeleteArchive(string filePath)
+        public void DeleteArchive(string fileName)
         {
-
+            containerClient.DeleteBlob(fileName);
+            Console.WriteLine($"Deleted blob {fileName}");
         }
 
-        public void DeleteArchivesBefore(DateTime date)
+        public async Task DeleteArchivesBefore(DateTime before, string tag)
         {
+            List<BlobItem> blobList = await ListBlobs();
+            List<BlobItem> toBeDeleted = new List<BlobItem>();
+
+            foreach(BlobItem blobItem in blobList){
+                var metadata = blobItem.Metadata;
+                string defaultValue;
+                metadata.TryGetValue("retention", out defaultValue);
+                if(defaultValue == tag){
+                    if(blobItem.Properties.CreatedOn < before){
+                        DeleteArchive(blobItem.Name);
+                    }
+                }
+            }
 
         }
     }

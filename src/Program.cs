@@ -1,17 +1,28 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Collections.Generic;
+using Azure.Storage.Blobs.Models;
 
 namespace ms_continuus
 {
     class Program
     {
+        private static Config config = new Config();
+        static async Task DeleteWeeklyBlobs(){
+            DateTime olderThan = Utility.DateMinusDays(config.WEEKLY_RETENTION);
+            Console.WriteLine($"Deleting blobs with retention='weekly' older than {olderThan}");
+
+            BlobStorage blobStorage = new BlobStorage();
+            await blobStorage.EnsureContainer();
+            await blobStorage.DeleteArchivesBefore(olderThan , "weekly");
+
+        }
         static async Task BackupArchive(){
             Api api = new Api();
 
             Migration startedMigration = await api.StartMigration();
 
-            // Migration migStatus = await api.MigrationStatus(440781);
             Migration migStatus = await api.MigrationStatus(startedMigration.id);
             int counter = 0;
             int sleepIntervalSeconds = 15;
@@ -27,17 +38,19 @@ namespace ms_continuus
             string archivePath = await api.DownloadArchive(migStatus.id);
 
             BlobStorage blobStorage = new BlobStorage();
-            await blobStorage.CreateContainer();
+            await blobStorage.EnsureContainer();
             await blobStorage.UploadArchive(archivePath);
-            // var blobList = await blobStorage.ListBlobs();
-            Console.WriteLine(123);
         }
+
         static async Task Main(string[] args)
         {
-            await BackupArchive();
+            BlobStorage blobStorage = new BlobStorage();
+            await blobStorage.EnsureContainer();
+            await blobStorage.UploadArchive("tmp/archive-26_11_2020-440277.tar.gz");
+            // await BackupArchive();
             // Api api = new Api();
             // var tmp = await api.ListMigrations();
-
+            await DeleteWeeklyBlobs();
 
             // Console.Write(tmp);
 
