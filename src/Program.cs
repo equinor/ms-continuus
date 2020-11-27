@@ -1,25 +1,20 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
 using System.Threading;
 
 namespace ms_continuus
 {
     class Program
     {
-        static async Task Main(string[] args)
-        {
-
+        static async Task BackupArchive(){
             Api api = new Api();
 
-            // Migration startedMigration = await api.StartMigration();
-            // Console.WriteLine($"Started a new migration:\n\t{startedMigration}");
+            Migration startedMigration = await api.StartMigration();
 
-            Migration migStatus = await api.MigrationStatus(440781);
-            // Migration migStatus = await api.MigrationStatus(startedMigration.id);
+            // Migration migStatus = await api.MigrationStatus(440781);
+            Migration migStatus = await api.MigrationStatus(startedMigration.id);
             int counter = 0;
-            int sleepIntervalSeconds = 5;
+            int sleepIntervalSeconds = 15;
             while (migStatus.state == "exporting")
             {
                 counter++;
@@ -36,6 +31,16 @@ namespace ms_continuus
             await blobStorage.UploadArchive(archivePath);
             // var blobList = await blobStorage.ListBlobs();
             Console.WriteLine(123);
+        }
+        static async Task Main(string[] args)
+        {
+            await BackupArchive();
+            // Api api = new Api();
+            // var tmp = await api.ListMigrations();
+
+
+            // Console.Write(tmp);
+
         }
     }
 }

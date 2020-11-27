@@ -2,8 +2,9 @@ using System.Threading.Tasks;
 using System.Net.Http;
 using System;
 using System.IO;
-using System.Text.Json;
 using System.Collections.Generic;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace ms_continuus
 {
@@ -38,7 +39,7 @@ namespace ms_continuus
             }
         }
 
-        private async Task<JsonDocument> GetJson(string url)
+        private async Task<JObject> GetJsonObject(string url)
         {
             try
             {
@@ -46,7 +47,25 @@ namespace ms_continuus
                 var responseBody = await client.GetAsync(url);
                 responseBody.EnsureSuccessStatusCode();
                 string content = await responseBody.Content.ReadAsStringAsync();
-                return JsonDocument.Parse(content);
+                return JObject.Parse(content);
+            }
+            catch (HttpRequestException e)
+            {
+                Console.WriteLine("\nException Caught!");
+                Console.WriteLine("Message :{0} ", e.Message);
+                return null;
+            }
+        }
+
+        private async Task<JArray> GetJsonArray(string url)
+        {
+            try
+            {
+
+                var responseBody = await client.GetAsync(url);
+                responseBody.EnsureSuccessStatusCode();
+                string content = await responseBody.Content.ReadAsStringAsync();
+                return JArray.Parse(content);
             }
             catch (HttpRequestException e)
             {
@@ -59,15 +78,13 @@ namespace ms_continuus
         public async Task<List<string>> ListRepositories()
         {
             SetPreviewHeader(true);
-            var jsonDocument = await this.GetJson(repo_url);
-            if (jsonDocument == null) { Environment.Exit(1); }
-            var repos = jsonDocument.RootElement.EnumerateArray();
+            JArray repos = await this.GetJsonArray(repo_url);
+            if (repos == null) { Environment.Exit(1); }
+
 
             List<string> repoList = new List<string>();
-            while (repos.MoveNext())
-            {
-                Console.WriteLine(repos.Current.GetProperty("name"));
-                repoList.Add(repos.Current.GetProperty("name").ToString());
+            foreach(JObject repo in repos){
+                repoList.Add(repo["name"].ToString());
             }
 
             return repoList;
@@ -76,21 +93,18 @@ namespace ms_continuus
         public async Task<List<Migration>> ListMigrations()
         {
             SetPreviewHeader(true);
-            var jsonDocument = await this.GetJson(migrations_url);
-            if (jsonDocument == null) { Environment.Exit(1); }
-            var migrations = jsonDocument.RootElement.EnumerateArray();
+            JArray migrations = await this.GetJsonArray(migrations_url);
+            if (migrations == null) { Environment.Exit(1); }
 
             List<Migration> migrationsList = new List<Migration>();
-            while (migrations.MoveNext())
-            {
-                // migrationsList.Add(JsonSerializer.Deserialize<Migration>(migrations.Current.GetRawText()));
+            foreach(JObject migration in migrations){
                 migrationsList.Add(new Migration(
-                        JsonSerializer.Deserialize<int>(migrations.Current.GetProperty("id").GetRawText()),
-                        migrations.Current.GetProperty("guid").ToString(),
-                        migrations.Current.GetProperty("state").ToString(),
-                        DateTime.Parse(migrations.Current.GetProperty("created_at").ToString())
-                    )
-                );
+                    int.Parse(migration["id"].ToString()),
+                    migration["guid"].ToString(),
+                    migration["state"].ToString(),
+                    DateTime.Parse(migration["created_at"].ToString())
+                )
+                    );
             }
             return migrationsList;
         }
@@ -98,15 +112,14 @@ namespace ms_continuus
         public async Task<Migration> MigrationStatus(int migrationId)
         {
             SetPreviewHeader(true);
-            var jsonDocument = await this.GetJson(migrations_url + "/" + migrationId.ToString());
-            if (jsonDocument == null) { Environment.Exit(1); }
-            var migration = jsonDocument.RootElement;
+            JObject migration = await this.GetJsonObject(migrations_url + "/" + migrationId.ToString());
+            if (migration == null) { Environment.Exit(1); }
             return new Migration(
-                JsonSerializer.Deserialize<int>(migration.GetProperty("id").GetRawText()),
-                migration.GetProperty("guid").ToString(),
-                migration.GetProperty("state").ToString(),
-                DateTime.Parse(migration.GetProperty("created_at").ToString())
-            );
+                    int.Parse(migration["id"].ToString()),
+                    migration["guid"].ToString(),
+                    migration["state"].ToString(),
+                    DateTime.Parse(migration["created_at"].ToString())
+                );
         }
 
         public async Task<string> DownloadArchive(int migrationId)
@@ -130,17 +143,23 @@ namespace ms_continuus
 
         public async Task<Migration> StartMigration()
         {
+            List<string> repositoryList = await ListRepositories();
+            Console.WriteLine($"Started a new migration:\n\t{repositoryList.Count} repositories");
+            string payload = $"{{\"repositories\": {JsonConvert.SerializeObject(repositoryList)}}}";
             SetPreviewHeader(true);
-            HttpResponseMessage response = await client.PostAsync(migrations_url, new StringContent("{\"repositories\": [\"fidowinter\"]}"));
+            HttpResponseMessage response = await client.PostAsync(migrations_url, new StringContent(payload));
             response.EnsureSuccessStatusCode();
             string content = await response.Content.ReadAsStringAsync();
-            var asJson = JsonDocument.Parse(content).RootElement;
-            return new Migration(
-                JsonSerializer.Deserialize<int>(asJson.GetProperty("id").GetRawText()),
-                asJson.GetProperty("guid").ToString(),
-                asJson.GetProperty("state").ToString(),
-                DateTime.Parse(asJson.GetProperty("created_at").ToString())
-            );
+            JObject migration = JObject.Parse(content);
+
+            Migration result = new Migration(
+                    int.Parse(migration["id"].ToString()),
+                    migration["guid"].ToString(),
+                    migration["state"].ToString(),
+                    DateTime.Parse(migration["created_at"].ToString())
+                );
+            Console.WriteLine($"\t{result}");
+            return result;
         }
     }
 }
