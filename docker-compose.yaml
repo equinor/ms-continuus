@@ -5,7 +5,10 @@ services:
   app:
     build:
       context: .
-    restart: unless-stopped
     environment:
+      GITHUB_ORG: equinor-test
       BLOB_TAG: weekly
+      BLOB_CONTAINER: github-archives
       WEEKLY_RETENTION: 1
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      STORAGE_KEY: ${STORAGE_KEY}

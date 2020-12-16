@@ -11,10 +11,10 @@ namespace ms_continuus
     public class Api
     {
         static Config config = new Config();
-        private string repo_url = $"https://api.github.com/users/soofstad/repos";
-        // private string repo_url = $"https://api.github.com/orgs/{config.ORGANIZATION}/repos/";
-        private string migrations_url = $"https://api.github.com/user/migrations";
-        // private string migrations_url = $"https://api.github.com/orgs/{config.ORGANIZATION}/migrations";
+        // private string repo_url = $"https://api.github.com/users/soofstad/repos";
+        private string repo_url = $"https://api.github.com/orgs/{config.ORGANIZATION}/repos";
+        // private string migrations_url = $"https://api.github.com/user/migrations";
+        private string migrations_url = $"https://api.github.com/orgs/{config.ORGANIZATION}/migrations";
         private static readonly HttpClient client = new HttpClient();
         private string previewAcceptHeader = "application/vnd.github.wyandotte-preview+json";
         private string defaultAcceptHeader = "application/vnd.github.v3+json";

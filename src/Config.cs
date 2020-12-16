@@ -13,15 +13,16 @@ public class Config
 
     public Config()
     {
-        this.ORGANIZATION = Environment.GetEnvironmentVariable("ORGANIZATION");
+        this.ORGANIZATION = Environment.GetEnvironmentVariable("GITHUB_ORG");
         if (this.ORGANIZATION == null)
         {
-            this.ORGANIZATION = "equinor";
+            throw new Exception("Environment variable 'GITHUB_ORG' missing");
         }
 
         this.BLOB_CONTAINER = Environment.GetEnvironmentVariable("BLOB_CONTAINER");
         if (this.BLOB_CONTAINER == null)
         {
+            Console.WriteLine("WARNING: Environment variable 'BLOB_CONTAINER' not set. Will assume a container named 'github-archives'");
             this.BLOB_CONTAINER = "github-archives";
         }
 

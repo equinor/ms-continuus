@@ -22,14 +22,14 @@ namespace ms_continuus
                 BlobContainerClient container = await blobServiceClient.CreateBlobContainerAsync(config.BLOB_CONTAINER);
                 Console.WriteLine("Done!");
                 containerClient = container;
-                return;
             }
             catch (RequestFailedException error)
             {
                 if (error.ErrorCode.Equals("ContainerAlreadyExists"))
                 {
                     containerClient = blobServiceClient.GetBlobContainerClient(config.BLOB_CONTAINER);
-                    return;
+                }if(error.ErrorCode.Equals("InvalidResourceName")){
+                    throw new ArgumentException($"The specifed resource name contains invalid characters. '{config.BLOB_CONTAINER}'");
                 }
             }
             catch (Exception error)
@@ -37,7 +37,6 @@ namespace ms_continuus
                 Console.WriteLine(error.InnerException.Message);
                 Console.WriteLine(error.InnerException.StackTrace);
                 Environment.Exit(1);
-                return;
             }
 
         }
@@ -52,6 +51,7 @@ namespace ms_continuus
                 $"\t{config.BLOB_CONTAINER}/{fileName}\n" +
                 $"\tmetadata: {{ retention: {config.BLOB_TAG} }}");
             using FileStream uploadFileStream = File.OpenRead(filePath);
+            Console.WriteLine($"\tsize: {Utility.BytesToString(uploadFileStream.Length)}");
             await blobClient.UploadAsync(uploadFileStream, true);
             uploadFileStream.Close();
 
@@ -75,6 +75,7 @@ namespace ms_continuus
             Console.WriteLine($"Deleted blob {fileName}");
         }
 
+        // List every blob, if tag eq input tag, and CreatedOn is older than input date, delete it
         public async Task DeleteArchivesBefore(DateTime before, string tag)
         {
             List<BlobItem> blobList = await ListBlobs();

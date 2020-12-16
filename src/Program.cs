@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Threading;
-using System.Collections.Generic;
-using Azure.Storage.Blobs.Models;
 
 namespace ms_continuus
 {
@@ -16,8 +14,18 @@ namespace ms_continuus
             BlobStorage blobStorage = new BlobStorage();
             await blobStorage.EnsureContainer();
             await blobStorage.DeleteArchivesBefore(olderThan , "weekly");
+        }
+
+        static async Task DeleteMonthlyBlobs(){
+            DateTime olderThan = Utility.DateMinusDays(config.MONTHLY_RETENTION);
+            Console.WriteLine($"Deleting blobs with retention='monthly' older than {olderThan}");
+
+            BlobStorage blobStorage = new BlobStorage();
+            await blobStorage.EnsureContainer();
+            await blobStorage.DeleteArchivesBefore(olderThan , "monthly");
 
         }
+
         static async Task BackupArchive(){
             Api api = new Api();
 
@@ -26,15 +34,15 @@ namespace ms_continuus
             Migration migStatus = await api.MigrationStatus(startedMigration.id);
             int counter = 0;
             int sleepIntervalSeconds = 15;
-            while (migStatus.state == "exporting")
+            while (migStatus.state != "exported")
             {
                 counter++;
                 Console.WriteLine($"Waiting for migration to be ready... {counter * sleepIntervalSeconds} seconds");
                 Thread.Sleep(sleepIntervalSeconds*1000);
                 migStatus = await api.MigrationStatus(migStatus.id);
             }
-            Console.WriteLine($"Ready;\n\t{migStatus}");
 
+            Console.WriteLine($"Ready;\n\t{migStatus}");
             string archivePath = await api.DownloadArchive(migStatus.id);
 
             BlobStorage blobStorage = new BlobStorage();
@@ -44,16 +52,9 @@ namespace ms_continuus
 
         static async Task Main(string[] args)
         {
-            BlobStorage blobStorage = new BlobStorage();
-            await blobStorage.EnsureContainer();
-            await blobStorage.UploadArchive("tmp/archive-26_11_2020-440277.tar.gz");
-            // await BackupArchive();
-            // Api api = new Api();
-            // var tmp = await api.ListMigrations();
+            await BackupArchive();
             await DeleteWeeklyBlobs();
-
-            // Console.Write(tmp);
-
+            await DeleteMonthlyBlobs();
         }
     }
 }
