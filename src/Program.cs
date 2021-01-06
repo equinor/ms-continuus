@@ -28,46 +28,60 @@ namespace ms_continuus
         }
 
         static async Task BackupArchive(){
-            Api api = new Api();
+            Api             api               = new Api();
+            List<Migration> startedMigrations = new List<Migration>();
+            List<string>    allRepositoryList = new List<string>();
 
-            Migration startedMigration = await api.StartMigration();
+            Console.WriteLine("Fetching all repositories...");
+            allRepositoryList = await api.ListRepositories();
 
-            Migration migStatus = await api.MigrationStatus(startedMigration.id);
-            int counter = 0;
-            int sleepIntervalSeconds = 15;
-            while (migStatus.state != "exported")
-            {
-                counter++;
-                Console.WriteLine($"Waiting for migration to be ready... {counter * sleepIntervalSeconds} seconds");
-                Thread.Sleep(sleepIntervalSeconds*1000);
-                migStatus = await api.MigrationStatus(migStatus.id);
-                if (migStatus.state == "failed"){
-                    throw new Exception("The migration failed...");
-                }
+            int chunks = allRepositoryList.Count / 100;
+            int remainder = allRepositoryList.Count % 100;
+
+            // Start the smallest migration first (remainder)
+            Console.WriteLine($"Starting migration of {allRepositoryList.Count} repositories divided in {chunks + 1} chunks");
+            startedMigrations.Add(await api.StartMigration(allRepositoryList.GetRange((chunks*100), remainder)));
+
+            // TODO: More gracefull error handling and continuation
+            for(int i = 0; i < chunks; i++){
+                List<string> chunkedRepositoryList = allRepositoryList.GetRange(i,100);
+                startedMigrations.Add(await api.StartMigration(chunkedRepositoryList));
             }
 
-            Console.WriteLine($"Ready;\n\t{migStatus}");
-            string archivePath = await api.DownloadArchive(migStatus.id);
+            // Iterate through all the started migrations, wait for them to complete,
+            // download them, and upload them to blob-storage
+            int migrationIndex = 0;
+            foreach(Migration migration in startedMigrations){
+                Migration migStatus = await api.MigrationStatus(migration.id);
+                int exportTimer = 0;
+                int sleepIntervalSeconds = 30;
+                while (migStatus.state != "exported")
+                {
+                    Thread.Sleep(sleepIntervalSeconds*1000);
+                    migStatus = await api.MigrationStatus(migStatus.id);
+                    if (migStatus.state == "failed"){
+                        throw new Exception("The migration failed...");
+                    }
+                    exportTimer++;
+                    Console.WriteLine($"Waiting for migration to be ready... {exportTimer * sleepIntervalSeconds} seconds");
+                }
 
-            BlobStorage blobStorage = new BlobStorage();
-            await blobStorage.EnsureContainer();
-            await blobStorage.UploadArchive(archivePath);
+                Console.WriteLine($"Ready;\t{migStatus}");
+                string archivePath = await api.DownloadArchive(migStatus.id, migrationIndex);
+                migrationIndex++;
+
+                BlobStorage blobStorage = new BlobStorage();
+                await blobStorage.EnsureContainer();
+                await blobStorage.UploadArchive(archivePath);
+            }
+            Console.WriteLine($"Successfully uploaded archives of {allRepositoryList.Count} repositories");
         }
 
         static async Task Main(string[] args)
         {
-            Api api = new Api();
-            string archivePath = await api.DownloadArchive(465489);
-            // await BackupArchive();
+            await BackupArchive();
             // await DeleteWeeklyBlobs();
             // await DeleteMonthlyBlobs();
-            // var api = new Api();
-            // List<string> repos = await api.ListRepositories();
-            // Console.WriteLine($"Total repos: {repos.Count}");
-            // foreach (string repo in repos)
-            // {
-            //     Console.WriteLine(repo);
-            // }
         }
     }
 }

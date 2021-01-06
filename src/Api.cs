@@ -80,17 +80,17 @@ namespace ms_continuus
             SetPreviewHeader(true);
             List<string> repoList = new List<string>();
             int page = 1;
-            // while (true)
-            // {
+            while (true)
+            {
                 JArray repos = await this.GetJsonArray($"{repo_url}?per_page=100&page={page}");
                 if (repos == null) { Environment.Exit(1); }
                 foreach (JObject repo in repos)
                 {
                     repoList.Add(repo["name"].ToString());
                 }
-                // if (repos.Count < 100) {break;}
+                if (repos.Count < 100) {break;}
                 page++;
-            // }
+            }
 
             return repoList;
         }
@@ -128,15 +128,16 @@ namespace ms_continuus
                 );
         }
 
-        public async Task<string> DownloadArchive(int migrationId)
+        public async Task<string> DownloadArchive(int migrationId, int volume)
         {
             Directory.CreateDirectory("./tmp");
             SetPreviewHeader(true);
             Console.WriteLine($"Downloading archive {migrationId}");
             var response = await client.GetAsync($"{migrations_url}/{migrationId.ToString()}/archive", HttpCompletionOption.ResponseHeadersRead);
             response.EnsureSuccessStatusCode();
-
-            string fileName = $"./tmp/archive-{DateTime.Now.ToString("dd_MM_yyyy")}-{migrationId.ToString()}.tar.gz";
+            string archiveSize = Utility.BytesToString(response.Content.Headers.ContentLength.GetValueOrDefault());
+            Console.WriteLine($"\tSize of archive is {archiveSize}");
+            string fileName = $"./tmp/archive-{DateTime.Now.ToString("dd_MM_yyyy")}-{migrationId.ToString()}-vol.{volume.ToString()}.tar.gz";
             using (Stream streamToReadFrom = await response.Content.ReadAsStreamAsync())
             {
                 using (Stream streamToWriteTo = File.Open(fileName, FileMode.Create))
@@ -148,10 +149,8 @@ namespace ms_continuus
             return fileName;
         }
 
-        public async Task<Migration> StartMigration()
+        public async Task<Migration> StartMigration(List<string> repositoryList)
         {
-            List<string> repositoryList = await ListRepositories();
-            Console.WriteLine($"Started a new migration:\n\t{repositoryList.Count} repositories");
             string payload = $"{{\"repositories\": {JsonConvert.SerializeObject(repositoryList)}}}";
             SetPreviewHeader(true);
             HttpResponseMessage response = await client.PostAsync(migrations_url, new StringContent(payload));
