@@ -80,17 +80,17 @@ namespace ms_continuus
             SetPreviewHeader(true);
             List<string> repoList = new List<string>();
             int page = 1;
-            while (true)
-            {
+            // while (true)
+            // {
                 JArray repos = await this.GetJsonArray($"{repo_url}?per_page=100&page={page}");
                 if (repos == null) { Environment.Exit(1); }
                 foreach (JObject repo in repos)
                 {
                     repoList.Add(repo["name"].ToString());
                 }
-                if (repos.Count < 100) {break;}
+                // if (repos.Count < 100) {break;}
                 page++;
-            }
+            // }
 
             return repoList;
         }
@@ -133,17 +133,18 @@ namespace ms_continuus
             Directory.CreateDirectory("./tmp");
             SetPreviewHeader(true);
             Console.WriteLine($"Downloading archive {migrationId}");
-            var response = await client.GetAsync($"{migrations_url}/{migrationId.ToString()}/archive");
+            var response = await client.GetAsync($"{migrations_url}/{migrationId.ToString()}/archive", HttpCompletionOption.ResponseHeadersRead);
             response.EnsureSuccessStatusCode();
-            var content = response.Content;
-            Stream stream = await content.ReadAsStreamAsync();
-            string fileName = $"./tmp/archive-{DateTime.Now.ToString("dd_MM_yyyy")}-{migrationId.ToString()}.tar.gz";
-            FileStream file = File.Create(fileName);
-            stream.Seek(0, SeekOrigin.Begin);
-            stream.CopyTo(file);
-            file.Close();
-            Console.WriteLine($"Successfully downloaded archive to '{fileName}'");
 
+            string fileName = $"./tmp/archive-{DateTime.Now.ToString("dd_MM_yyyy")}-{migrationId.ToString()}.tar.gz";
+            using (Stream streamToReadFrom = await response.Content.ReadAsStreamAsync())
+            {
+                using (Stream streamToWriteTo = File.Open(fileName, FileMode.Create))
+                {
+                    await streamToReadFrom.CopyToAsync(streamToWriteTo);
+                }
+            }
+            Console.WriteLine($"Successfully downloaded archive to '{fileName}'");
             return fileName;
         }
 

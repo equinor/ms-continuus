@@ -39,3 +39,6 @@ LifeCycleManagement is configured to delete old blobs following these rules;
 ## Notes
 
 - Github Migration archives are automatically deleted after seven days
+- Some timings overview
+  - Approx. 30min to migrate 100 repositories
+  - 100 repositories with attachements ~= 6GB

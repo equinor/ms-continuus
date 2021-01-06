@@ -41,6 +41,9 @@ namespace ms_continuus
                 Console.WriteLine($"Waiting for migration to be ready... {counter * sleepIntervalSeconds} seconds");
                 Thread.Sleep(sleepIntervalSeconds*1000);
                 migStatus = await api.MigrationStatus(migStatus.id);
+                if (migStatus.state == "failed"){
+                    throw new Exception("The migration failed...");
+                }
             }
 
             Console.WriteLine($"Ready;\n\t{migStatus}");
@@ -53,9 +56,11 @@ namespace ms_continuus
 
         static async Task Main(string[] args)
         {
-            await BackupArchive();
-            await DeleteWeeklyBlobs();
-            await DeleteMonthlyBlobs()
+            Api api = new Api();
+            string archivePath = await api.DownloadArchive(465489);
+            // await BackupArchive();
+            // await DeleteWeeklyBlobs();
+            // await DeleteMonthlyBlobs();
             // var api = new Api();
             // List<string> repos = await api.ListRepositories();
             // Console.WriteLine($"Total repos: {repos.Count}");
