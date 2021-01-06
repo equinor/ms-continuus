@@ -78,13 +78,18 @@ namespace ms_continuus
         public async Task<List<string>> ListRepositories()
         {
             SetPreviewHeader(true);
-            JArray repos = await this.GetJsonArray(repo_url);
-            if (repos == null) { Environment.Exit(1); }
-
-
             List<string> repoList = new List<string>();
-            foreach(JObject repo in repos){
-                repoList.Add(repo["name"].ToString());
+            int page = 1;
+            while (true)
+            {
+                JArray repos = await this.GetJsonArray($"{repo_url}?per_page=100&page={page}");
+                if (repos == null) { Environment.Exit(1); }
+                foreach (JObject repo in repos)
+                {
+                    repoList.Add(repo["name"].ToString());
+                }
+                if (repos.Count < 100) {break;}
+                page++;
             }
 
             return repoList;
@@ -97,7 +102,8 @@ namespace ms_continuus
             if (migrations == null) { Environment.Exit(1); }
 
             List<Migration> migrationsList = new List<Migration>();
-            foreach(JObject migration in migrations){
+            foreach (JObject migration in migrations)
+            {
                 migrationsList.Add(new Migration(
                     int.Parse(migration["id"].ToString()),
                     migration["guid"].ToString(),

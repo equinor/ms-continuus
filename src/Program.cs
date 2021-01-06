@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Collections.Generic;
 
 namespace ms_continuus
 {
@@ -54,7 +55,14 @@ namespace ms_continuus
         {
             await BackupArchive();
             await DeleteWeeklyBlobs();
-            await DeleteMonthlyBlobs();
+            await DeleteMonthlyBlobs()
+            // var api = new Api();
+            // List<string> repos = await api.ListRepositories();
+            // Console.WriteLine($"Total repos: {repos.Count}");
+            // foreach (string repo in repos)
+            // {
+            //     Console.WriteLine(repo);
+            // }
         }
     }
 }
