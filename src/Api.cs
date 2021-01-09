@@ -88,7 +88,7 @@ namespace ms_continuus
                 {
                     repoList.Add(repo["name"].ToString());
                 }
-                if (repos.Count < 100) {break;}
+                if (repos.Count < 100) { break; }
                 page++;
             }
 
@@ -158,11 +158,18 @@ namespace ms_continuus
             string content = await response.Content.ReadAsStringAsync();
             JObject migration = JObject.Parse(content);
 
+            List<string> repoList = new List<string>();
+            foreach (JObject repo in migration["repositories"])
+            {
+                repoList.Add(repo["name"].ToString());
+            }
+
             Migration result = new Migration(
                     int.Parse(migration["id"].ToString()),
                     migration["guid"].ToString(),
                     migration["state"].ToString(),
-                    DateTime.Parse(migration["created_at"].ToString())
+                    DateTime.Parse(migration["created_at"].ToString()),
+                    repoList
                 );
             Console.WriteLine($"\t{result}");
             return result;
