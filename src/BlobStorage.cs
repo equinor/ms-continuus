@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Azure;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace ms_continuus
 {
@@ -28,7 +29,9 @@ namespace ms_continuus
                 if (error.ErrorCode.Equals("ContainerAlreadyExists"))
                 {
                     containerClient = blobServiceClient.GetBlobContainerClient(config.BLOB_CONTAINER);
-                }if(error.ErrorCode.Equals("InvalidResourceName")){
+                }
+                if (error.ErrorCode.Equals("InvalidResourceName"))
+                {
                     throw new ArgumentException($"The specifed resource name contains invalid characters. '{config.BLOB_CONTAINER}'");
                 }
             }
@@ -43,21 +46,43 @@ namespace ms_continuus
 
         public async Task UploadArchive(string filePath)
         {
+            int retryInterval = 30000;
+            int attempts = 1;
             string fileName = Path.GetFileName(filePath);
             BlobClient blobClient = containerClient.GetBlobClient(fileName);
             Dictionary<string, string> metadata = new Dictionary<string, string>();
 
-            Console.WriteLine($"Uploading to Blob storage as blob:\n" +
+            Console.WriteLine($"Uploading to Blob storage as:\n" +
                 $"\t{config.BLOB_CONTAINER}/{fileName}\n" +
                 $"\tmetadata: {{ retention: {config.BLOB_TAG} }}");
             using FileStream uploadFileStream = File.OpenRead(filePath);
             Console.WriteLine($"\tsize: {Utility.BytesToString(uploadFileStream.Length)}");
-            await blobClient.UploadAsync(uploadFileStream, true);
-            uploadFileStream.Close();
 
-            metadata["retention"] = config.BLOB_TAG;
-            await blobClient.SetMetadataAsync(metadata);
-            Console.WriteLine($"Done!");
+            while (attempts < 3)
+            {
+                try
+                {
+                    await blobClient.UploadAsync(uploadFileStream, true);
+                    uploadFileStream.Close();
+                    metadata["retention"] = config.BLOB_TAG;
+                    await blobClient.SetMetadataAsync(metadata);
+                    Console.WriteLine($"Done!");
+                    return;
+                }
+                catch (AggregateException agEx)
+                {
+                    var firstException = agEx.InnerExceptions[agEx.InnerExceptions.Count - 1];
+                    Console.WriteLine($"WARNING: Failed to upload archive to blob storage ({firstException.Message}). Retrying in {retryInterval / 1000} seconds");
+                    Thread.Sleep(retryInterval);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"WARNING: Failed to upload archive to blob storage ({e.Message}). Retrying in {retryInterval / 1000} seconds");
+                    Thread.Sleep(retryInterval);
+                }
+                attempts++;
+            }
+            throw new Exception($"Failed to upload blob '{filePath}' with {attempts} attempts.");
         }
 
         public async Task<List<BlobItem>> ListBlobs()
@@ -81,12 +106,15 @@ namespace ms_continuus
             List<BlobItem> blobList = await ListBlobs();
             List<BlobItem> toBeDeleted = new List<BlobItem>();
 
-            foreach(BlobItem blobItem in blobList){
+            foreach (BlobItem blobItem in blobList)
+            {
                 var metadata = blobItem.Metadata;
                 string defaultValue;
                 metadata.TryGetValue("retention", out defaultValue);
-                if(defaultValue == tag){
-                    if(blobItem.Properties.CreatedOn < before){
+                if (defaultValue == tag)
+                {
+                    if (blobItem.Properties.CreatedOn < before)
+                    {
                         DeleteArchive(blobItem.Name);
                     }
                 }

@@ -5,6 +5,7 @@ using System.IO;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Threading;
 
 namespace ms_continuus
 {
@@ -133,20 +134,36 @@ namespace ms_continuus
             Directory.CreateDirectory("./tmp");
             SetPreviewHeader(true);
             Console.WriteLine($"Downloading archive {migrationId}");
-            var response = await client.GetAsync($"{migrations_url}/{migrationId.ToString()}/archive", HttpCompletionOption.ResponseHeadersRead);
-            response.EnsureSuccessStatusCode();
-            string archiveSize = Utility.BytesToString(response.Content.Headers.ContentLength.GetValueOrDefault());
-            Console.WriteLine($"\tSize of archive is {archiveSize}");
-            string fileName = $"./tmp/archive-{DateTime.Now.ToString("dd_MM_yyyy")}-{migrationId.ToString()}-vol.{volume.ToString()}.tar.gz";
-            using (Stream streamToReadFrom = await response.Content.ReadAsStreamAsync())
+            int attempts = 1;
+            int retryInterval = 30000;
+
+            while (attempts < 5)
             {
-                using (Stream streamToWriteTo = File.Open(fileName, FileMode.Create))
+                try
                 {
-                    await streamToReadFrom.CopyToAsync(streamToWriteTo);
+                    var response = await client.GetAsync($"{migrations_url}/{migrationId.ToString()}/archive", HttpCompletionOption.ResponseHeadersRead);
+                    response.EnsureSuccessStatusCode();
+                    string archiveSize = Utility.BytesToString(response.Content.Headers.ContentLength.GetValueOrDefault());
+                    Console.WriteLine($"\tSize of archive is {archiveSize}");
+                    string fileName = $"./tmp/archive-{DateTime.Now.ToString("dd_MM_yyyy")}-{migrationId.ToString()}-vol.{volume.ToString()}.tar.gz";
+                    using (Stream streamToReadFrom = await response.Content.ReadAsStreamAsync())
+                    {
+                        using (Stream streamToWriteTo = File.Open(fileName, FileMode.Create))
+                        {
+                            await streamToReadFrom.CopyToAsync(streamToWriteTo);
+                        }
+                    }
+                    Console.WriteLine($"Successfully downloaded archive to '{fileName}'");
+                    return fileName;
                 }
+                catch (HttpRequestException e)
+                {
+                    Console.WriteLine($"WARNING: Failed to download archive ({e.Message}). Retrying in {retryInterval / 1000} seconds");
+                    Thread.Sleep(retryInterval);
+                }
+                attempts++;
             }
-            Console.WriteLine($"Successfully downloaded archive to '{fileName}'");
-            return fileName;
+            throw new Exception($"Failed to download archive '{migrationId}' with {attempts} attempts.");
         }
 
         public async Task<Migration> StartMigration(List<string> repositoryList)

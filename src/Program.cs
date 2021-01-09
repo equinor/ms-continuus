@@ -39,15 +39,12 @@ namespace ms_continuus
             List<Migration> startedMigrations = new List<Migration>();
             List<string> allRepositoryList = new List<string>();
             Dictionary<string, List<String>> failedToMigrate = new Dictionary<string, List<String>>();
-            List<string> failedToDownload = new List<string>();
-            List<string> failedToUpload = new List<string>();
 
             Console.WriteLine("Fetching all repositories...");
             allRepositoryList = await api.ListRepositories();
 
             int chunks = allRepositoryList.Count / chunkSize;
             int remainder = allRepositoryList.Count % chunkSize;
-
 
             Console.WriteLine($"Starting migration of {allRepositoryList.Count} repositories divided into {chunks + 1} chunks");
             // Start the smallest migration first (remainder)
@@ -78,17 +75,17 @@ namespace ms_continuus
                         break;
                     }
                     exportTimer++;
-                    Console.WriteLine($"Waiting for migration to be ready... {exportTimer * sleepIntervalSeconds} seconds");
+                    Console.WriteLine($"Waiting for migration to be ready... waited {exportTimer * sleepIntervalSeconds} seconds");
                 }
                 if (migration.state == "failed") { continue; }
 
                 Console.WriteLine($"Ready;\t{migStatus}");
                 string archivePath = await api.DownloadArchive(migStatus.id, migrationIndex);
-                migrationIndex++;
 
                 BlobStorage blobStorage = new BlobStorage();
                 await blobStorage.EnsureContainer();
                 await blobStorage.UploadArchive(archivePath);
+                migrationIndex++;
             }
 
             // Summary of failed migrations
@@ -110,8 +107,8 @@ namespace ms_continuus
         static async Task Main(string[] args)
         {
             await BackupArchive();
-            // await DeleteWeeklyBlobs();
-            // await DeleteMonthlyBlobs();
+            await DeleteWeeklyBlobs();
+            await DeleteMonthlyBlobs();
         }
     }
 }
