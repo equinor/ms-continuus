@@ -79,7 +79,7 @@ namespace ms_continuus
                     exportTimer++;
                     Console.WriteLine($"Waiting for {migStatus.ToString()} to be ready... waited {exportTimer * sleepIntervalSeconds} seconds");
                 }
-                if (migration.state == "failed") { continue; }
+                if (migStatus.state == "failed") { continue; }
 
                 Console.WriteLine($"Ready;\t{migStatus}");
                 string archivePath = await api.DownloadArchive(migStatus.id, migrationIndex);
