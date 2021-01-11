@@ -70,6 +70,8 @@ namespace ms_continuus
                     await blobClient.SetMetadataAsync(metadata);
                     Console.WriteLine($"\tDone!");
                     Console.WriteLine($"\tAverage upload speed: {Utility.TransferSpeed(fileSize, timeStarted)}");
+                    Console.WriteLine($"\tDeleting file from disk...");
+                    File.Delete(filePath);
                     return;
                 }
                 catch (AggregateException agEx)

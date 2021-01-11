@@ -132,6 +132,7 @@ namespace ms_continuus
         public async Task<string> DownloadArchive(int migrationId, int volume)
         {
             Directory.CreateDirectory("./tmp");
+            string fileName = $"./tmp/archive-{DateTime.Now.ToString("dd_MM_yyyy")}-vol.{volume.ToString()}-{migrationId.ToString()}.tar.gz";
             SetPreviewHeader(true);
             Console.WriteLine($"Downloading archive {migrationId}");
             int attempts = 1;
@@ -147,7 +148,6 @@ namespace ms_continuus
                     string archiveSize = Utility.BytesToString(response.Content.Headers.ContentLength.GetValueOrDefault());
                     Console.WriteLine($"\tSize of archive is {archiveSize}");
                     Console.WriteLine($"\tAverage download speed: {Utility.TransferSpeed(response.Content.Headers.ContentLength.GetValueOrDefault(), timeStarted)}");
-                    string fileName = $"./tmp/archive-{DateTime.Now.ToString("dd_MM_yyyy")}-{migrationId.ToString()}-vol.{volume.ToString()}.tar.gz";
                     using (Stream streamToReadFrom = await response.Content.ReadAsStreamAsync())
                     {
                         using (Stream streamToWriteTo = File.Open(fileName, FileMode.Create))
