@@ -105,10 +105,9 @@ namespace ms_continuus
 
         static async Task Main(string[] args)
         {
-            Console.WriteLine($"Starting backup of Github organization with the tag: {config.BLOB_TAG}");
+            Console.WriteLine(config.ToString());
+            Console.WriteLine($"Starting backup of Github organization");
             DateTime startTime = DateTime.Now;
-            // var api = new Api();
-            // var down = await api.DownloadArchive(468199, 0);
             await BackupArchive();
             await DeleteWeeklyBlobs();
             await DeleteMonthlyBlobs();

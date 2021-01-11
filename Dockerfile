@@ -9,6 +9,6 @@ RUN wget https://packages.microsoft.com/config/debian/10/packages-microsoft-prod
     apt-get install -y dotnet-sdk-5.0
 
 WORKDIR /app
-ADD . .
+ADD src LICENSE ms-continuus.csproj README.md ./
 RUN dotnet build
-ENTRYPOINT dotnet run
+CMD dotnet run

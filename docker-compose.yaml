@@ -2,11 +2,12 @@ version: "3.4"
 
 services:
 
-  app:
+  ms-continuus:
+    image: sdpequinor/ms-continuus
     build:
       context: .
     environment:
-      GITHUB_ORG: equinor-test
+      GITHUB_ORG: equinor
       BLOB_TAG: weekly
       BLOB_CONTAINER: github-archives
       WEEKLY_RETENTION: 1

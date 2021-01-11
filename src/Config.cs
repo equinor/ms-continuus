@@ -68,5 +68,17 @@ public class Config
         {
             throw new Exception("Environment variable 'STORAGE_KEY' missing");
         }
+
     }
+    public override string ToString()
+        {
+            var org = $"\n\tORGANIZATION: {ORGANIZATION}";
+            var container = $"\n\tBLOB_CONTAINER: {BLOB_CONTAINER}";
+            var tag = $"\n\tBLOB_TAG: {BLOB_TAG}";
+            var week_ret = $"\n\tWEEKLY_RETENTION: {WEEKLY_RETENTION}";
+            var month_ret = $"\n\tMONTHLY_RETENTION: {MONTHLY_RETENTION}";
+            var year_ret = $"\n\tYEARLY_RETENTION: {YEARLY_RETENTION}";
+
+            return $"Configuration settings:"+org+container+tag+week_ret+month_ret+year_ret;
+        }
 }
