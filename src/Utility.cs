@@ -21,6 +21,16 @@ namespace ms_continuus
             double num = Math.Round(bytes / Math.Pow(1024, place), 1);
             return (Math.Sign(byteCount) * num).ToString() + suf[place];
         }
+
+        public static String TransferSpeed(long totalBytes, DateTime startTime)
+        {
+            TimeSpan elapsed = DateTime.Now - startTime;
+            var elapsedSeconds = elapsed.Seconds;
+            if (elapsedSeconds == 0) { elapsedSeconds++;};
+            var avgBytes = totalBytes/elapsedSeconds;
+            var bytesToString = BytesToString(avgBytes);
+            return $"{bytesToString}/sec";
+        }
     }
 
 }

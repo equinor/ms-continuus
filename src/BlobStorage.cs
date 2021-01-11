@@ -46,6 +46,7 @@ namespace ms_continuus
 
         public async Task UploadArchive(string filePath)
         {
+            DateTime timeStarted = DateTime.Now;
             int retryInterval = 30000;
             int attempts = 1;
             string fileName = Path.GetFileName(filePath);
@@ -56,7 +57,8 @@ namespace ms_continuus
                 $"\t{config.BLOB_CONTAINER}/{fileName}\n" +
                 $"\tmetadata: {{ retention: {config.BLOB_TAG} }}");
             using FileStream uploadFileStream = File.OpenRead(filePath);
-            Console.WriteLine($"\tsize: {Utility.BytesToString(uploadFileStream.Length)}");
+            long fileSize = uploadFileStream.Length;
+            Console.WriteLine($"\tsize: {Utility.BytesToString(fileSize)}");
 
             while (attempts < 3)
             {
@@ -66,7 +68,8 @@ namespace ms_continuus
                     uploadFileStream.Close();
                     metadata["retention"] = config.BLOB_TAG;
                     await blobClient.SetMetadataAsync(metadata);
-                    Console.WriteLine($"Done!");
+                    Console.WriteLine($"\tDone!");
+                    Console.WriteLine($"\tAverage upload speed: {Utility.TransferSpeed(fileSize, timeStarted)}");
                     return;
                 }
                 catch (AggregateException agEx)

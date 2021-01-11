@@ -32,6 +32,8 @@ namespace ms_continuus
         static async Task BackupArchive()
         {
             Api api = new Api();
+            BlobStorage blobStorage = new BlobStorage();
+            await blobStorage.EnsureContainer();
             // Each migration can contain approx. 100~120 repositories
             // to keep the API from timing out. This also makes sense for retrying
             // smaller parts that failed in some way.
@@ -75,15 +77,12 @@ namespace ms_continuus
                         break;
                     }
                     exportTimer++;
-                    Console.WriteLine($"Waiting for migration to be ready... waited {exportTimer * sleepIntervalSeconds} seconds");
+                    Console.WriteLine($"Waiting for {migStatus.ToString()} to be ready... waited {exportTimer * sleepIntervalSeconds} seconds");
                 }
                 if (migration.state == "failed") { continue; }
 
                 Console.WriteLine($"Ready;\t{migStatus}");
                 string archivePath = await api.DownloadArchive(migStatus.id, migrationIndex);
-
-                BlobStorage blobStorage = new BlobStorage();
-                await blobStorage.EnsureContainer();
                 await blobStorage.UploadArchive(archivePath);
                 migrationIndex++;
             }
@@ -106,9 +105,15 @@ namespace ms_continuus
 
         static async Task Main(string[] args)
         {
+            Console.WriteLine($"Starting backup of Github organization with the tag: {config.BLOB_TAG}");
+            DateTime startTime = DateTime.Now;
+            // var api = new Api();
+            // var down = await api.DownloadArchive(468199, 0);
             await BackupArchive();
             await DeleteWeeklyBlobs();
             await DeleteMonthlyBlobs();
+            TimeSpan totalRunTime = DateTime.Now - startTime;
+            Console.WriteLine($"MS-Continuus run complete. Started at {startTime.ToString()}, finnished at {DateTime.Now.ToString()}, total run time: {totalRunTime.ToString()}");
         }
     }
 }
