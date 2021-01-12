@@ -147,7 +147,6 @@ namespace ms_continuus
                     response.EnsureSuccessStatusCode();
                     string archiveSize = Utility.BytesToString(response.Content.Headers.ContentLength.GetValueOrDefault());
                     Console.WriteLine($"\tSize of archive is {archiveSize}");
-                    Console.WriteLine($"\tAverage download speed: {Utility.TransferSpeed(response.Content.Headers.ContentLength.GetValueOrDefault(), timeStarted)}");
                     using (Stream streamToReadFrom = await response.Content.ReadAsStreamAsync())
                     {
                         using (Stream streamToWriteTo = File.Open(fileName, FileMode.Create))
@@ -155,6 +154,7 @@ namespace ms_continuus
                             await streamToReadFrom.CopyToAsync(streamToWriteTo);
                         }
                     }
+                    Console.WriteLine($"\tAverage download speed: {Utility.TransferSpeed(response.Content.Headers.ContentLength.GetValueOrDefault(), timeStarted)}");
                     Console.WriteLine($"Successfully downloaded archive to '{fileName}'");
                     return fileName;
                 }
