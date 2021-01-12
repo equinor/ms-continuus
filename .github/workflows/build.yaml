@@ -24,3 +24,4 @@ jobs:
           password: ${{ secrets.GH_REGISTRY }}
           registry: ghcr.io
           repository: equinor/ms-continuus
+          tag_with_ref: false

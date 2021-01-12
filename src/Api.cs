@@ -131,8 +131,10 @@ namespace ms_continuus
 
         public async Task<string> DownloadArchive(int migrationId, int volume)
         {
+            string paddedVolume = volume.ToString();
+            if(volume < 10){paddedVolume = "0"+paddedVolume;}
             Directory.CreateDirectory("./tmp");
-            string fileName = $"./tmp/archive-{DateTime.Now.ToString("dd_MM_yyyy")}-vol.{volume.ToString()}-{migrationId.ToString()}.tar.gz";
+            string fileName = $"./tmp/archive-{DateTime.Now.ToString("dd_MM_yyyy")}-vol.{paddedVolume}-{migrationId.ToString()}.tar.gz";
             SetPreviewHeader(true);
             Console.WriteLine($"Downloading archive {migrationId}");
             int attempts = 1;
