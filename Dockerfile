@@ -1,4 +1,5 @@
 FROM debian:10-slim
+LABEL org.opencontainers.image.source https://github.com/equinor/ms-continuus
 
 RUN apt update -y && apt install wget -y
 RUN wget https://packages.microsoft.com/config/debian/10/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && \

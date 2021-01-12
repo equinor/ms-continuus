@@ -16,12 +16,4 @@ jobs:
           password: ${{ secrets.GH_REGISTRY }}
           registry: ghcr.io
           repository: equinor/ms-continuus
-          tag_with_ref: true
-      - name: Push to GitHub Container Registry
-        uses: docker/build-push-action@v1
-        with:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GH_REGISTRY }}
-          registry: ghcr.io
-          repository: equinor/ms-continuus
-          tag_with_ref: false
+
