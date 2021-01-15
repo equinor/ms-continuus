@@ -29,7 +29,12 @@ public class Config
         this.BLOB_TAG = Environment.GetEnvironmentVariable("BLOB_TAG");
         if (this.BLOB_TAG == null)
         {
-            this.BLOB_TAG = "none";
+            // Set tag to 'monthly' for the first week of the month.
+            if(DateTime.Today.Day < 8){
+                this.BLOB_TAG = "monthly";
+            }else{
+                this.BLOB_TAG = "weekly";
+            }
         }
 
         var weekly_from_env = Environment.GetEnvironmentVariable("WEEKLY_RETENTION");
