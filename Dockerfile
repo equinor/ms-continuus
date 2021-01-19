@@ -1,15 +1,16 @@
-FROM debian:10-slim
-LABEL org.opencontainers.image.source https://github.com/equinor/ms-continuus
-
-RUN apt update -y && apt install wget -y
-RUN wget https://packages.microsoft.com/config/debian/10/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && \
-    dpkg -i packages-microsoft-prod.deb && \
-    apt-get update  && \
-    apt-get install -y apt-transport-https && \
-    apt-get update && \
-    apt-get install -y dotnet-sdk-5.0
+FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
 
 WORKDIR /app
-ADD src LICENSE ms-continuus.csproj README.md ./
-RUN dotnet build
-CMD dotnet run
+COPY *.csproj ./
+RUN dotnet restore
+
+COPY src LICENSE README.md ./
+RUN dotnet publish -c Release -o out
+
+
+FROM mcr.microsoft.com/dotnet/runtime:5.0 AS run
+LABEL org.opencontainers.image.source https://github.com/equinor/ms-continuus
+WORKDIR /app
+
+COPY --from=build /app/out .
+ENTRYPOINT ["dotnet", "ms-continuus.dll"]
