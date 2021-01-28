@@ -1,11 +1,11 @@
-using System.Threading.Tasks;
-using System.Net.Http;
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Threading;
 
 namespace ms_continuus
 {
@@ -26,7 +26,7 @@ namespace ms_continuus
             Client.DefaultRequestHeaders.Add("User-Agent", "Equinor-Archiver");
         }
 
-        private void SetPreviewHeader(bool preview = true)
+        private static void SetPreviewHeader(bool preview = true)
         {
             if (preview)
             {
@@ -78,12 +78,12 @@ namespace ms_continuus
 
         public async Task<List<string>> ListRepositories()
         {
-            SetPreviewHeader(true);
+            SetPreviewHeader();
             var repoList = new List<string>();
             var page = 1;
             while (true)
             {
-                var repos = await this.GetJsonArray($"{_repoUrl}?per_page=100&page={page}");
+                var repos = await GetJsonArray($"{_repoUrl}?per_page=100&page={page}");
                 if (repos == null) { Environment.Exit(1); }
                 foreach (var jToken in repos)
                 {
@@ -99,8 +99,8 @@ namespace ms_continuus
 
         public async Task<List<Migration>> ListMigrations()
         {
-            SetPreviewHeader(true);
-            var migrations = await this.GetJsonArray(_migrationsUrl);
+            SetPreviewHeader();
+            var migrations = await GetJsonArray(_migrationsUrl);
             if (migrations == null) { Environment.Exit(1); }
 
             var migrationsList = new List<Migration>();
@@ -120,8 +120,8 @@ namespace ms_continuus
 
         public async Task<Migration> MigrationStatus(int migrationId)
         {
-            SetPreviewHeader(true);
-            var migration = await this.GetJsonObject(_migrationsUrl + "/" + migrationId.ToString());
+            SetPreviewHeader();
+            var migration = await GetJsonObject(_migrationsUrl + "/" + migrationId);
             if (migration == null) { Environment.Exit(1); }
             return new Migration(
                     int.Parse(migration["id"].ToString()),
@@ -136,8 +136,8 @@ namespace ms_continuus
             var paddedVolume = volume.ToString();
             if(volume < 10){paddedVolume = "0"+paddedVolume;}
             Directory.CreateDirectory("./tmp");
-            var fileName = $"./tmp/archive-{DateTime.Now.ToString("dd_MM_yyyy")}-vol.{paddedVolume}-{migrationId.ToString()}.tar.gz";
-            SetPreviewHeader(true);
+            var fileName = $"./tmp/archive-{DateTime.Now:dd_MM_yyyy}-vol.{paddedVolume}-{migrationId.ToString()}.tar.gz";
+            SetPreviewHeader();
             Console.WriteLine($"Downloading archive {migrationId}");
             var attempts = 1;
             const int retryInterval = 30_000;
@@ -151,9 +151,9 @@ namespace ms_continuus
                     response.EnsureSuccessStatusCode();
                     var archiveSize = Utility.BytesToString(response.Content.Headers.ContentLength.GetValueOrDefault());
                     Console.WriteLine($"\tSize of archive is {archiveSize}");
-                    using (var streamToReadFrom = await response.Content.ReadAsStreamAsync())
+                    await using (var streamToReadFrom = await response.Content.ReadAsStreamAsync())
                     {
-                        using (Stream streamToWriteTo = File.Open(fileName, FileMode.Create))
+                        await using (Stream streamToWriteTo = File.Open(fileName, FileMode.Create))
                         {
                             await streamToReadFrom.CopyToAsync(streamToWriteTo);
                         }
@@ -175,7 +175,7 @@ namespace ms_continuus
         public async Task<Migration> StartMigration(List<string> repositoryList)
         {
             var payload = $"{{\"repositories\": {JsonConvert.SerializeObject(repositoryList)}}}";
-            SetPreviewHeader(true);
+            SetPreviewHeader();
             var response = await Client.PostAsync(_migrationsUrl, new StringContent(payload));
             response.EnsureSuccessStatusCode();
             var content = await response.Content.ReadAsStringAsync();

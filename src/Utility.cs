@@ -11,7 +11,7 @@ namespace ms_continuus
             return now - timeSpan;
         }
 
-        public static String BytesToString(long byteCount)
+        public static string BytesToString(long byteCount)
         {
             string[] suf = { "B", "KB", "MB", "GB", "TB", "PB", "EB" };
             if (byteCount == 0)
@@ -19,10 +19,10 @@ namespace ms_continuus
             var bytes = Math.Abs(byteCount);
             var place = Convert.ToInt32(Math.Floor(Math.Log(bytes, 1024)));
             var num = Math.Round(bytes / Math.Pow(1024, place), 1);
-            return (Math.Sign(byteCount) * num).ToString() + suf[place];
+            return Math.Sign(byteCount) * num + suf[place];
         }
 
-        public static String TransferSpeed(long totalBytes, DateTime startTime)
+        public static string TransferSpeed(long totalBytes, DateTime startTime)
         {
             var elapsed = DateTime.Now - startTime;
             var elapsedSeconds = elapsed.Seconds;

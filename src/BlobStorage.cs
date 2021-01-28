@@ -11,8 +11,8 @@ namespace ms_continuus
 {
     public class BlobStorage
     {
-        private static readonly Config Config = new Config();
-        private static readonly BlobServiceClient BlobServiceClient = new BlobServiceClient(Config.StorageKey);
+        private static readonly Config Config = new();
+        private static readonly BlobServiceClient BlobServiceClient = new(Config.StorageKey);
         private BlobContainerClient _containerClient;
 
         public async Task EnsureContainer()
@@ -26,22 +26,21 @@ namespace ms_continuus
             }
             catch (RequestFailedException error)
             {
-                if (error.ErrorCode.Equals("ContainerAlreadyExists"))
+                _containerClient = error.ErrorCode switch
                 {
-                    _containerClient = BlobServiceClient.GetBlobContainerClient(Config.BlobContainer);
-                }
-                if (error.ErrorCode.Equals("InvalidResourceName"))
-                {
-                    throw new ArgumentException($"The specifed resource name contains invalid characters. '{Config.BlobContainer}'");
-                }
+                    "ContainerAlreadyExists" => BlobServiceClient.GetBlobContainerClient(Config.BlobContainer),
+                    "InvalidResourceName" => throw new ArgumentException(
+                        $"The specified resource name contains invalid characters. '{Config.BlobContainer}'"
+                    ),
+                    _ => _containerClient
+                };
             }
             catch (Exception error)
             {
-                Console.WriteLine(error.InnerException.Message);
-                Console.WriteLine(error.InnerException.StackTrace);
+                Console.WriteLine(error.InnerException?.Message);
+                Console.WriteLine(error.InnerException?.StackTrace);
                 Environment.Exit(1);
             }
-
         }
 
         public async Task UploadArchive(string filePath)
@@ -53,10 +52,12 @@ namespace ms_continuus
             var blobClient = _containerClient.GetBlobClient(fileName);
             var metadata = new Dictionary<string, string>();
 
-            Console.WriteLine($"Uploading to Blob storage as:\n" +
+            Console.WriteLine(
+                $"Uploading to Blob storage as:\n" +
                 $"\t{Config.BlobContainer}/{fileName}\n" +
-                $"\tmetadata: {{ retention: {Config.BlobTag} }}");
-            using var uploadFileStream = File.OpenRead(filePath);
+                $"\tmetadata: {{ retention: {Config.BlobTag} }}"
+            );
+            await using var uploadFileStream = File.OpenRead(filePath);
             var fileSize = uploadFileStream.Length;
             Console.WriteLine($"\tsize: {Utility.BytesToString(fileSize)}");
 
@@ -76,17 +77,22 @@ namespace ms_continuus
                 }
                 catch (AggregateException agEx)
                 {
-                    var firstException = agEx.InnerExceptions[agEx.InnerExceptions.Count - 1];
-                    Console.WriteLine($"WARNING: Failed to upload archive to blob storage ({firstException.Message}). Retrying in {retryInterval / 1000} seconds");
+                    var firstException = agEx.InnerExceptions[^1];
+                    Console.WriteLine(
+                        $"WARNING: Failed to upload archive to blob storage ({firstException.Message}). Retrying in {retryInterval / 1000} seconds"
+                    );
                     Thread.Sleep(retryInterval);
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"WARNING: Failed to upload archive to blob storage ({e.Message}). Retrying in {retryInterval / 1000} seconds");
+                    Console.WriteLine(
+                        $"WARNING: Failed to upload archive to blob storage ({e.Message}). Retrying in {retryInterval / 1000} seconds");
                     Thread.Sleep(retryInterval);
                 }
+
                 attempts++;
             }
+
             throw new Exception($"Failed to upload blob '{filePath}' with {attempts} attempts.");
         }
 
@@ -97,8 +103,10 @@ namespace ms_continuus
             {
                 blobList.Add(blobItem);
             }
+
             return blobList;
         }
+
         public void DeleteArchive(string fileName)
         {
             _containerClient.DeleteBlob(fileName);
@@ -115,15 +123,12 @@ namespace ms_continuus
             {
                 var metadata = blobItem.Metadata;
                 metadata.TryGetValue("retention", out var defaultValue);
-                if (defaultValue == tag)
+                if (defaultValue != tag) continue;
+                if (blobItem.Properties.CreatedOn < before)
                 {
-                    if (blobItem.Properties.CreatedOn < before)
-                    {
-                        DeleteArchive(blobItem.Name);
-                    }
+                    DeleteArchive(blobItem.Name);
                 }
             }
-
         }
     }
 }

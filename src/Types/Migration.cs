@@ -14,11 +14,11 @@ namespace ms_continuus
 
         public Migration(int id, string guid, string state, DateTime? started = null, List<string> repositories = null)
         {
-            this.Id = id;
-            this.Guid = guid;
-            this.State = state;
-            this.Started = started;
-            this.Repositories = repositories;
+            Id = id;
+            Guid = guid;
+            State = state;
+            Started = started;
+            Repositories = repositories;
         }
 
         public override string ToString()

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace ms_continuus
 {
-    class Program
+    internal static class Program
     {
         private static readonly Config Config = new Config();
 
@@ -19,7 +19,7 @@ namespace ms_continuus
             await blobStorage.DeleteArchivesBefore(olderThan, "weekly");
         }
 
-        static async Task DeleteMonthlyBlobs()
+        private static async Task DeleteMonthlyBlobs()
         {
             var olderThan = Utility.DateMinusDays(Config.MonthlyRetention);
             Console.WriteLine($"Deleting blobs with retention='monthly' older than {olderThan}");
@@ -30,7 +30,7 @@ namespace ms_continuus
 
         }
 
-        static async Task BackupArchive()
+        private static async Task BackupArchive()
         {
             var api = new Api();
             var blobStorage = new BlobStorage();
@@ -104,7 +104,7 @@ namespace ms_continuus
             }
         }
 
-        static async Task Main(string[] args)
+        private static async Task Main(string[] args)
         {
             Console.WriteLine(Config.ToString());
             Console.WriteLine($"Starting backup of Github organization");
