@@ -46,18 +46,18 @@ namespace ms_continuus
 
         public async Task UploadArchive(string filePath)
         {
-            DateTime timeStarted = DateTime.Now;
-            int retryInterval = 30000;
-            int attempts = 1;
-            string fileName = Path.GetFileName(filePath);
-            BlobClient blobClient = _containerClient.GetBlobClient(fileName);
-            Dictionary<string, string> metadata = new Dictionary<string, string>();
+            var timeStarted = DateTime.Now;
+            const int retryInterval = 30_000;
+            var attempts = 1;
+            var fileName = Path.GetFileName(filePath);
+            var blobClient = _containerClient.GetBlobClient(fileName);
+            var metadata = new Dictionary<string, string>();
 
             Console.WriteLine($"Uploading to Blob storage as:\n" +
                 $"\t{Config.BlobContainer}/{fileName}\n" +
                 $"\tmetadata: {{ retention: {Config.BlobTag} }}");
-            using FileStream uploadFileStream = File.OpenRead(filePath);
-            long fileSize = uploadFileStream.Length;
+            using var uploadFileStream = File.OpenRead(filePath);
+            var fileSize = uploadFileStream.Length;
             Console.WriteLine($"\tsize: {Utility.BytesToString(fileSize)}");
 
             while (attempts < 3)
@@ -92,7 +92,7 @@ namespace ms_continuus
 
         public async Task<List<BlobItem>> ListBlobs()
         {
-            List<BlobItem> blobList = new List<BlobItem>();
+            var blobList = new List<BlobItem>();
             await foreach (BlobItem blobItem in _containerClient.GetBlobsAsync(BlobTraits.All))
             {
                 blobList.Add(blobItem);
@@ -108,14 +108,13 @@ namespace ms_continuus
         // List every blob, if tag eq input tag, and CreatedOn is older than input date, delete it
         public async Task DeleteArchivesBefore(DateTime before, string tag)
         {
-            List<BlobItem> blobList = await ListBlobs();
-            List<BlobItem> toBeDeleted = new List<BlobItem>();
+            var blobList = await ListBlobs();
+            var toBeDeleted = new List<BlobItem>();
 
-            foreach (BlobItem blobItem in blobList)
+            foreach (var blobItem in blobList)
             {
                 var metadata = blobItem.Metadata;
-                string defaultValue;
-                metadata.TryGetValue("retention", out defaultValue);
+                metadata.TryGetValue("retention", out var defaultValue);
                 if (defaultValue == tag)
                 {
                     if (blobItem.Properties.CreatedOn < before)

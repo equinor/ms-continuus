@@ -47,7 +47,7 @@ namespace ms_continuus
 
                 var responseBody = await Client.GetAsync(url);
                 responseBody.EnsureSuccessStatusCode();
-                string content = await responseBody.Content.ReadAsStringAsync();
+                var content = await responseBody.Content.ReadAsStringAsync();
                 return JObject.Parse(content);
             }
             catch (HttpRequestException e)
@@ -65,7 +65,7 @@ namespace ms_continuus
 
                 var responseBody = await Client.GetAsync(url);
                 responseBody.EnsureSuccessStatusCode();
-                string content = await responseBody.Content.ReadAsStringAsync();
+                var content = await responseBody.Content.ReadAsStringAsync();
                 return JArray.Parse(content);
             }
             catch (HttpRequestException e)
@@ -79,14 +79,15 @@ namespace ms_continuus
         public async Task<List<string>> ListRepositories()
         {
             SetPreviewHeader(true);
-            List<string> repoList = new List<string>();
-            int page = 1;
+            var repoList = new List<string>();
+            var page = 1;
             while (true)
             {
-                JArray repos = await this.GetJsonArray($"{_repoUrl}?per_page=100&page={page}");
+                var repos = await this.GetJsonArray($"{_repoUrl}?per_page=100&page={page}");
                 if (repos == null) { Environment.Exit(1); }
-                foreach (JObject repo in repos)
+                foreach (var jToken in repos)
                 {
+                    var repo = (JObject) jToken;
                     repoList.Add(repo["name"].ToString());
                 }
                 if (repos.Count < 100) { break; }
@@ -99,12 +100,13 @@ namespace ms_continuus
         public async Task<List<Migration>> ListMigrations()
         {
             SetPreviewHeader(true);
-            JArray migrations = await this.GetJsonArray(_migrationsUrl);
+            var migrations = await this.GetJsonArray(_migrationsUrl);
             if (migrations == null) { Environment.Exit(1); }
 
-            List<Migration> migrationsList = new List<Migration>();
-            foreach (JObject migration in migrations)
+            var migrationsList = new List<Migration>();
+            foreach (var jToken in migrations)
             {
+                var migration = (JObject) jToken;
                 migrationsList.Add(new Migration(
                     int.Parse(migration["id"].ToString()),
                     migration["guid"].ToString(),
@@ -119,7 +121,7 @@ namespace ms_continuus
         public async Task<Migration> MigrationStatus(int migrationId)
         {
             SetPreviewHeader(true);
-            JObject migration = await this.GetJsonObject(_migrationsUrl + "/" + migrationId.ToString());
+            var migration = await this.GetJsonObject(_migrationsUrl + "/" + migrationId.ToString());
             if (migration == null) { Environment.Exit(1); }
             return new Migration(
                     int.Parse(migration["id"].ToString()),
@@ -131,14 +133,14 @@ namespace ms_continuus
 
         public async Task<string> DownloadArchive(int migrationId, int volume)
         {
-            string paddedVolume = volume.ToString();
+            var paddedVolume = volume.ToString();
             if(volume < 10){paddedVolume = "0"+paddedVolume;}
             Directory.CreateDirectory("./tmp");
-            string fileName = $"./tmp/archive-{DateTime.Now.ToString("dd_MM_yyyy")}-vol.{paddedVolume}-{migrationId.ToString()}.tar.gz";
+            var fileName = $"./tmp/archive-{DateTime.Now.ToString("dd_MM_yyyy")}-vol.{paddedVolume}-{migrationId.ToString()}.tar.gz";
             SetPreviewHeader(true);
             Console.WriteLine($"Downloading archive {migrationId}");
-            int attempts = 1;
-            int retryInterval = 30000;
+            var attempts = 1;
+            const int retryInterval = 30_000;
 
             while (attempts < 5)
             {
@@ -147,9 +149,9 @@ namespace ms_continuus
                     var timeStarted = DateTime.Now;
                     var response = await Client.GetAsync($"{_migrationsUrl}/{migrationId.ToString()}/archive", HttpCompletionOption.ResponseHeadersRead);
                     response.EnsureSuccessStatusCode();
-                    string archiveSize = Utility.BytesToString(response.Content.Headers.ContentLength.GetValueOrDefault());
+                    var archiveSize = Utility.BytesToString(response.Content.Headers.ContentLength.GetValueOrDefault());
                     Console.WriteLine($"\tSize of archive is {archiveSize}");
-                    using (Stream streamToReadFrom = await response.Content.ReadAsStreamAsync())
+                    using (var streamToReadFrom = await response.Content.ReadAsStreamAsync())
                     {
                         using (Stream streamToWriteTo = File.Open(fileName, FileMode.Create))
                         {
@@ -172,20 +174,21 @@ namespace ms_continuus
 
         public async Task<Migration> StartMigration(List<string> repositoryList)
         {
-            string payload = $"{{\"repositories\": {JsonConvert.SerializeObject(repositoryList)}}}";
+            var payload = $"{{\"repositories\": {JsonConvert.SerializeObject(repositoryList)}}}";
             SetPreviewHeader(true);
-            HttpResponseMessage response = await Client.PostAsync(_migrationsUrl, new StringContent(payload));
+            var response = await Client.PostAsync(_migrationsUrl, new StringContent(payload));
             response.EnsureSuccessStatusCode();
-            string content = await response.Content.ReadAsStringAsync();
-            JObject migration = JObject.Parse(content);
+            var content = await response.Content.ReadAsStringAsync();
+            var migration = JObject.Parse(content);
 
-            List<string> repoList = new List<string>();
-            foreach (JObject repo in migration["repositories"])
+            var repoList = new List<string>();
+            foreach (var jToken in migration["repositories"])
             {
+                var repo = (JObject) jToken;
                 repoList.Add(repo["name"].ToString());
             }
 
-            Migration result = new Migration(
+            var result = new Migration(
                     int.Parse(migration["id"].ToString()),
                     migration["guid"].ToString(),
                     migration["state"].ToString(),
