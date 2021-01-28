@@ -5,12 +5,12 @@ namespace ms_continuus
 {
     public class Migration
     {
-        public readonly int Id;
         public readonly string Guid;
+        public readonly int Id;
+        public readonly List<string> Repositories;
         public readonly string State;
 
         public DateTime? Started;
-        public readonly List<string> Repositories;
 
         public Migration(int id, string guid, string state, DateTime? started = null, List<string> repositories = null)
         {

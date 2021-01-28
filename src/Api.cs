@@ -11,14 +11,17 @@ namespace ms_continuus
 {
     public class Api
     {
-        private static readonly Config Config = new Config();
-        // private string repo_url = $"https://api.github.com/users/soofstad/repos";
-        private readonly string _repoUrl = $"https://api.github.com/orgs/{Config.Organization}/repos";
-        // private string migrations_url = $"https://api.github.com/user/migrations";
-        private readonly string _migrationsUrl = $"https://api.github.com/orgs/{Config.Organization}/migrations";
-        private static readonly HttpClient Client = new HttpClient();
         private const string PreviewAcceptHeader = "application/vnd.github.wyandotte-preview+json";
         private const string DefaultAcceptHeader = "application/vnd.github.v3+json";
+        private static readonly Config Config = new();
+
+        private static readonly HttpClient Client = new();
+
+        // private string migrations_url = $"https://api.github.com/user/migrations";
+        private readonly string _migrationsUrl = $"https://api.github.com/orgs/{Config.Organization}/migrations";
+
+        // private string repo_url = $"https://api.github.com/users/soofstad/repos";
+        private readonly string _repoUrl = $"https://api.github.com/orgs/{Config.Organization}/repos";
 
         public Api()
         {
@@ -44,7 +47,6 @@ namespace ms_continuus
         {
             try
             {
-
                 var responseBody = await Client.GetAsync(url);
                 responseBody.EnsureSuccessStatusCode();
                 var content = await responseBody.Content.ReadAsStringAsync();
@@ -62,7 +64,6 @@ namespace ms_continuus
         {
             try
             {
-
                 var responseBody = await Client.GetAsync(url);
                 responseBody.EnsureSuccessStatusCode();
                 var content = await responseBody.Content.ReadAsStringAsync();
@@ -84,13 +85,14 @@ namespace ms_continuus
             while (true)
             {
                 var repos = await GetJsonArray($"{_repoUrl}?per_page=100&page={page}");
-                if (repos == null) { Environment.Exit(1); }
+                if (repos == null) Environment.Exit(1);
                 foreach (var jToken in repos)
                 {
                     var repo = (JObject) jToken;
                     repoList.Add(repo["name"].ToString());
                 }
-                if (repos.Count < 100) { break; }
+
+                if (repos.Count < 100) break;
                 page++;
             }
 
@@ -101,20 +103,21 @@ namespace ms_continuus
         {
             SetPreviewHeader();
             var migrations = await GetJsonArray(_migrationsUrl);
-            if (migrations == null) { Environment.Exit(1); }
+            if (migrations == null) Environment.Exit(1);
 
             var migrationsList = new List<Migration>();
             foreach (var jToken in migrations)
             {
                 var migration = (JObject) jToken;
                 migrationsList.Add(new Migration(
-                    int.Parse(migration["id"].ToString()),
-                    migration["guid"].ToString(),
-                    migration["state"].ToString(),
-                    DateTime.Parse(migration["created_at"].ToString())
-                )
-                    );
+                        int.Parse(migration["id"].ToString()),
+                        migration["guid"].ToString(),
+                        migration["state"].ToString(),
+                        DateTime.Parse(migration["created_at"].ToString())
+                    )
+                );
             }
+
             return migrationsList;
         }
 
@@ -122,21 +125,22 @@ namespace ms_continuus
         {
             SetPreviewHeader();
             var migration = await GetJsonObject(_migrationsUrl + "/" + migrationId);
-            if (migration == null) { Environment.Exit(1); }
+            if (migration == null) Environment.Exit(1);
             return new Migration(
-                    int.Parse(migration["id"].ToString()),
-                    migration["guid"].ToString(),
-                    migration["state"].ToString(),
-                    DateTime.Parse(migration["created_at"].ToString())
-                );
+                int.Parse(migration["id"].ToString()),
+                migration["guid"].ToString(),
+                migration["state"].ToString(),
+                DateTime.Parse(migration["created_at"].ToString())
+            );
         }
 
         public async Task<string> DownloadArchive(int migrationId, int volume)
         {
             var paddedVolume = volume.ToString();
-            if(volume < 10){paddedVolume = "0"+paddedVolume;}
+            if (volume < 10) paddedVolume = "0" + paddedVolume;
             Directory.CreateDirectory("./tmp");
-            var fileName = $"./tmp/archive-{DateTime.Now:dd_MM_yyyy}-vol.{paddedVolume}-{migrationId.ToString()}.tar.gz";
+            var fileName =
+                $"./tmp/archive-{DateTime.Now:dd_MM_yyyy}-vol.{paddedVolume}-{migrationId.ToString()}.tar.gz";
             SetPreviewHeader();
             Console.WriteLine($"Downloading archive {migrationId}");
             var attempts = 1;
@@ -147,7 +151,10 @@ namespace ms_continuus
                 try
                 {
                     var timeStarted = DateTime.Now;
-                    var response = await Client.GetAsync($"{_migrationsUrl}/{migrationId.ToString()}/archive", HttpCompletionOption.ResponseHeadersRead);
+                    var response = await Client.GetAsync(
+                        $"{_migrationsUrl}/{migrationId.ToString()}/archive",
+                        HttpCompletionOption.ResponseHeadersRead
+                    );
                     response.EnsureSuccessStatusCode();
                     var archiveSize = Utility.BytesToString(response.Content.Headers.ContentLength.GetValueOrDefault());
                     Console.WriteLine($"\tSize of archive is {archiveSize}");
@@ -158,17 +165,24 @@ namespace ms_continuus
                             await streamToReadFrom.CopyToAsync(streamToWriteTo);
                         }
                     }
-                    Console.WriteLine($"\tAverage download speed: {Utility.TransferSpeed(response.Content.Headers.ContentLength.GetValueOrDefault(), timeStarted)}");
+
+                    Console.WriteLine(
+                        $"\tAverage download speed: {Utility.TransferSpeed(response.Content.Headers.ContentLength.GetValueOrDefault(), timeStarted)}"
+                    );
                     Console.WriteLine($"Successfully downloaded archive to '{fileName}'");
                     return fileName;
                 }
                 catch (HttpRequestException e)
                 {
-                    Console.WriteLine($"WARNING: Failed to download archive ({e.Message}). Retrying in {retryInterval / 1000} seconds");
+                    Console.WriteLine(
+                        $"WARNING: Failed to download archive ({e.Message}). Retrying in {retryInterval / 1000} seconds"
+                    );
                     Thread.Sleep(retryInterval);
                 }
+
                 attempts++;
             }
+
             throw new Exception($"Failed to download archive '{migrationId}' with {attempts} attempts.");
         }
 
@@ -189,12 +203,12 @@ namespace ms_continuus
             }
 
             var result = new Migration(
-                    int.Parse(migration["id"].ToString()),
-                    migration["guid"].ToString(),
-                    migration["state"].ToString(),
-                    DateTime.Parse(migration["created_at"].ToString()),
-                    repoList
-                );
+                int.Parse(migration["id"].ToString()),
+                migration["guid"].ToString(),
+                migration["state"].ToString(),
+                DateTime.Parse(migration["created_at"].ToString()),
+                repoList
+            );
             Console.WriteLine($"\t{result}");
             return result;
         }

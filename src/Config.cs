@@ -4,22 +4,10 @@ namespace ms_continuus
 {
     public class Config
     {
-        public string Organization { get; }
-        public string BlobContainer { get; }
-        public string BlobTag { get; }
-        public int WeeklyRetention { get; }
-        public int MonthlyRetention { get; }
-        public int YearlyRetention { get; }
-        public string GithubToken { get; }
-        public string StorageKey { get; }
-
         public Config()
         {
             Organization = Environment.GetEnvironmentVariable("GITHUB_ORG");
-            if (Organization == null)
-            {
-                throw new Exception("Environment variable 'GITHUB_ORG' missing");
-            }
+            if (Organization == null) throw new Exception("Environment variable 'GITHUB_ORG' missing");
 
             BlobContainer = Environment.GetEnvironmentVariable("BLOB_CONTAINER");
             if (BlobContainer == null)
@@ -43,17 +31,21 @@ namespace ms_continuus
 
             GithubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
             if (GithubToken == null)
-            {
                 Console.WriteLine(
                     "WARNING: Environment variable 'GITHUB_TOKEN' not set. Will continue operating on public repositories only");
-            }
 
             StorageKey = Environment.GetEnvironmentVariable("STORAGE_KEY");
-            if (StorageKey == null)
-            {
-                throw new Exception("Environment variable 'STORAGE_KEY' missing");
-            }
+            if (StorageKey == null) throw new Exception("Environment variable 'STORAGE_KEY' missing");
         }
+
+        public string Organization { get; }
+        public string BlobContainer { get; }
+        public string BlobTag { get; }
+        public int WeeklyRetention { get; }
+        public int MonthlyRetention { get; }
+        public int YearlyRetention { get; }
+        public string GithubToken { get; }
+        public string StorageKey { get; }
 
         public override string ToString()
         {

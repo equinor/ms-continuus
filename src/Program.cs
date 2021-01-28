@@ -1,13 +1,13 @@
 using System;
-using System.Threading.Tasks;
-using System.Threading;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ms_continuus
 {
     internal static class Program
     {
-        private static readonly Config Config = new Config();
+        private static readonly Config Config = new();
 
         private static async Task DeleteWeeklyBlobs()
         {
@@ -27,7 +27,6 @@ namespace ms_continuus
             var blobStorage = new BlobStorage();
             await blobStorage.EnsureContainer();
             await blobStorage.DeleteArchivesBefore(olderThan, "monthly");
-
         }
 
         private static async Task BackupArchive()
@@ -48,9 +47,10 @@ namespace ms_continuus
             var chunks = allRepositoryList.Count / chunkSize;
             var remainder = allRepositoryList.Count % chunkSize;
 
-            Console.WriteLine($"Starting migration of {allRepositoryList.Count} repositories divided into {chunks + 1} chunks");
+            Console.WriteLine(
+                $"Starting migration of {allRepositoryList.Count} repositories divided into {chunks + 1} chunks");
             // Start the smallest migration first (remainder)
-            startedMigrations.Add(await api.StartMigration(allRepositoryList.GetRange((chunks * chunkSize), remainder)));
+            startedMigrations.Add(await api.StartMigration(allRepositoryList.GetRange(chunks * chunkSize, remainder)));
 
             for (var i = 0; i < chunks; i++)
             {
@@ -73,14 +73,17 @@ namespace ms_continuus
                     if (migStatus.State == "failed")
                     {
                         failedToMigrate[migration.Id.ToString()] = migration.Repositories;
-                        Console.WriteLine($"WARNING: Migration {migration.Id.ToString()} failed... continuing with next");
+                        Console.WriteLine(
+                            $"WARNING: Migration {migration.Id.ToString()} failed... continuing with next");
                         break;
                     }
 
                     exportTimer++;
-                    Console.WriteLine($"Waiting for {migStatus.ToString()} to be ready... waited {exportTimer * sleepIntervalSeconds} seconds");
+                    Console.WriteLine(
+                        $"Waiting for {migStatus} to be ready... waited {exportTimer * sleepIntervalSeconds} seconds");
                 }
-                if (migStatus.State == "failed") { continue; }
+
+                if (migStatus.State == "failed") continue;
 
                 Console.WriteLine($"Ready;\t{migStatus}");
                 var archivePath = await api.DownloadArchive(migStatus.Id, migrationIndex);
@@ -91,11 +94,9 @@ namespace ms_continuus
             // Summary of failed migrations
             if (failedToMigrate.Count > 0)
             {
-                Console.WriteLine($"WARNING: Some migration requests failed to migrate");
+                Console.WriteLine("WARNING: Some migration requests failed to migrate");
                 foreach (var (key, value) in failedToMigrate)
-                {
                     Console.WriteLine($"\tMigration Id: {key}, Repositories: [{string.Join(",", value)}]");
-                }
                 Environment.Exit(2);
             }
             else
@@ -107,13 +108,14 @@ namespace ms_continuus
         private static async Task Main(string[] args)
         {
             Console.WriteLine(Config.ToString());
-            Console.WriteLine($"Starting backup of Github organization");
+            Console.WriteLine("Starting backup of Github organization");
             var startTime = DateTime.Now;
             await BackupArchive();
             await DeleteWeeklyBlobs();
             await DeleteMonthlyBlobs();
             var totalRunTime = DateTime.Now - startTime;
-            Console.WriteLine($"MS-Continuus run complete. Started at {startTime.ToString()}, finished at {DateTime.Now.ToString()}, total run time: {totalRunTime.ToString()}");
+            Console.WriteLine(
+                $"MS-Continuus run complete. Started at {startTime.ToString()}, finished at {DateTime.Now.ToString()}, total run time: {totalRunTime.ToString()}");
         }
     }
 }

@@ -1,11 +1,11 @@
-using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure;
-using System.Collections.Generic;
-using System.Threading;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 
 namespace ms_continuus
 {
@@ -53,7 +53,7 @@ namespace ms_continuus
             var metadata = new Dictionary<string, string>();
 
             Console.WriteLine(
-                $"Uploading to Blob storage as:\n" +
+                "Uploading to Blob storage as:\n" +
                 $"\t{Config.BlobContainer}/{fileName}\n" +
                 $"\tmetadata: {{ retention: {Config.BlobTag} }}"
             );
@@ -69,9 +69,9 @@ namespace ms_continuus
                     uploadFileStream.Close();
                     metadata["retention"] = Config.BlobTag;
                     await blobClient.SetMetadataAsync(metadata);
-                    Console.WriteLine($"\tDone!");
+                    Console.WriteLine("\tDone!");
                     Console.WriteLine($"\tAverage upload speed: {Utility.TransferSpeed(fileSize, timeStarted)}");
-                    Console.WriteLine($"\tDeleting file from disk...");
+                    Console.WriteLine("\tDeleting file from disk...");
                     File.Delete(filePath);
                     return;
                 }
@@ -99,10 +99,7 @@ namespace ms_continuus
         public async Task<List<BlobItem>> ListBlobs()
         {
             var blobList = new List<BlobItem>();
-            await foreach (BlobItem blobItem in _containerClient.GetBlobsAsync(BlobTraits.All))
-            {
-                blobList.Add(blobItem);
-            }
+            await foreach (var blobItem in _containerClient.GetBlobsAsync(BlobTraits.All)) blobList.Add(blobItem);
 
             return blobList;
         }
@@ -124,10 +121,7 @@ namespace ms_continuus
                 var metadata = blobItem.Metadata;
                 metadata.TryGetValue("retention", out var defaultValue);
                 if (defaultValue != tag) continue;
-                if (blobItem.Properties.CreatedOn < before)
-                {
-                    DeleteArchive(blobItem.Name);
-                }
+                if (blobItem.Properties.CreatedOn < before) DeleteArchive(blobItem.Name);
             }
         }
     }

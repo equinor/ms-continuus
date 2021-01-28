@@ -7,13 +7,13 @@ namespace ms_continuus
         public static DateTime DateMinusDays(int days)
         {
             var now = DateTime.Now;
-            var timeSpan = new TimeSpan(days, 0,0,0 );
+            var timeSpan = new TimeSpan(days, 0, 0, 0);
             return now - timeSpan;
         }
 
         public static string BytesToString(long byteCount)
         {
-            string[] suf = { "B", "KB", "MB", "GB", "TB", "PB", "EB" };
+            string[] suf = {"B", "KB", "MB", "GB", "TB", "PB", "EB"};
             if (byteCount == 0)
                 return "0" + suf[0];
             var bytes = Math.Abs(byteCount);
@@ -26,11 +26,10 @@ namespace ms_continuus
         {
             var elapsed = DateTime.Now - startTime;
             var elapsedSeconds = elapsed.Seconds;
-            if (elapsedSeconds == 0) { elapsedSeconds++;};
-            var avgBytes = totalBytes/elapsedSeconds;
+            if (elapsedSeconds == 0) elapsedSeconds++;
+            var avgBytes = totalBytes / elapsedSeconds;
             var bytesToString = BytesToString(avgBytes);
             return $"{bytesToString}/sec";
         }
     }
-
 }
