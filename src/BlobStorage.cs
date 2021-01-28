@@ -11,28 +11,28 @@ namespace ms_continuus
 {
     public class BlobStorage
     {
-        private static Config config = new Config();
-        private static BlobServiceClient blobServiceClient = new BlobServiceClient(config.STORAGE_KEY);
-        private BlobContainerClient containerClient;
+        private static readonly Config Config = new Config();
+        private static readonly BlobServiceClient BlobServiceClient = new BlobServiceClient(Config.StorageKey);
+        private BlobContainerClient _containerClient;
 
         public async Task EnsureContainer()
         {
             try
             {
-                Console.WriteLine($"Ensuring Blob container '{config.BLOB_CONTAINER}'...");
-                BlobContainerClient container = await blobServiceClient.CreateBlobContainerAsync(config.BLOB_CONTAINER);
+                Console.WriteLine($"Ensuring Blob container '{Config.BlobContainer}'...");
+                BlobContainerClient container = await BlobServiceClient.CreateBlobContainerAsync(Config.BlobContainer);
                 Console.WriteLine("Done!");
-                containerClient = container;
+                _containerClient = container;
             }
             catch (RequestFailedException error)
             {
                 if (error.ErrorCode.Equals("ContainerAlreadyExists"))
                 {
-                    containerClient = blobServiceClient.GetBlobContainerClient(config.BLOB_CONTAINER);
+                    _containerClient = BlobServiceClient.GetBlobContainerClient(Config.BlobContainer);
                 }
                 if (error.ErrorCode.Equals("InvalidResourceName"))
                 {
-                    throw new ArgumentException($"The specifed resource name contains invalid characters. '{config.BLOB_CONTAINER}'");
+                    throw new ArgumentException($"The specifed resource name contains invalid characters. '{Config.BlobContainer}'");
                 }
             }
             catch (Exception error)
@@ -50,12 +50,12 @@ namespace ms_continuus
             int retryInterval = 30000;
             int attempts = 1;
             string fileName = Path.GetFileName(filePath);
-            BlobClient blobClient = containerClient.GetBlobClient(fileName);
+            BlobClient blobClient = _containerClient.GetBlobClient(fileName);
             Dictionary<string, string> metadata = new Dictionary<string, string>();
 
             Console.WriteLine($"Uploading to Blob storage as:\n" +
-                $"\t{config.BLOB_CONTAINER}/{fileName}\n" +
-                $"\tmetadata: {{ retention: {config.BLOB_TAG} }}");
+                $"\t{Config.BlobContainer}/{fileName}\n" +
+                $"\tmetadata: {{ retention: {Config.BlobTag} }}");
             using FileStream uploadFileStream = File.OpenRead(filePath);
             long fileSize = uploadFileStream.Length;
             Console.WriteLine($"\tsize: {Utility.BytesToString(fileSize)}");
@@ -66,7 +66,7 @@ namespace ms_continuus
                 {
                     await blobClient.UploadAsync(uploadFileStream, true);
                     uploadFileStream.Close();
-                    metadata["retention"] = config.BLOB_TAG;
+                    metadata["retention"] = Config.BlobTag;
                     await blobClient.SetMetadataAsync(metadata);
                     Console.WriteLine($"\tDone!");
                     Console.WriteLine($"\tAverage upload speed: {Utility.TransferSpeed(fileSize, timeStarted)}");
@@ -93,7 +93,7 @@ namespace ms_continuus
         public async Task<List<BlobItem>> ListBlobs()
         {
             List<BlobItem> blobList = new List<BlobItem>();
-            await foreach (BlobItem blobItem in containerClient.GetBlobsAsync(BlobTraits.All))
+            await foreach (BlobItem blobItem in _containerClient.GetBlobsAsync(BlobTraits.All))
             {
                 blobList.Add(blobItem);
             }
@@ -101,7 +101,7 @@ namespace ms_continuus
         }
         public void DeleteArchive(string fileName)
         {
-            containerClient.DeleteBlob(fileName);
+            _containerClient.DeleteBlob(fileName);
             Console.WriteLine($"Deleted blob {fileName}");
         }
 

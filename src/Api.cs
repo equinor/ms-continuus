@@ -11,32 +11,32 @@ namespace ms_continuus
 {
     public class Api
     {
-        static Config config = new Config();
+        private static readonly Config Config = new Config();
         // private string repo_url = $"https://api.github.com/users/soofstad/repos";
-        private string repo_url = $"https://api.github.com/orgs/{config.ORGANIZATION}/repos";
+        private readonly string _repoUrl = $"https://api.github.com/orgs/{Config.Organization}/repos";
         // private string migrations_url = $"https://api.github.com/user/migrations";
-        private string migrations_url = $"https://api.github.com/orgs/{config.ORGANIZATION}/migrations";
-        private static readonly HttpClient client = new HttpClient();
-        private string previewAcceptHeader = "application/vnd.github.wyandotte-preview+json";
-        private string defaultAcceptHeader = "application/vnd.github.v3+json";
+        private readonly string _migrationsUrl = $"https://api.github.com/orgs/{Config.Organization}/migrations";
+        private static readonly HttpClient Client = new HttpClient();
+        private const string PreviewAcceptHeader = "application/vnd.github.wyandotte-preview+json";
+        private const string DefaultAcceptHeader = "application/vnd.github.v3+json";
 
         public Api()
         {
-            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config.GITHUB_TOKEN}");
-            client.DefaultRequestHeaders.Add("User-Agent", "Equinor-Archiver");
+            Client.DefaultRequestHeaders.Add("Authorization", $"Bearer {Config.GithubToken}");
+            Client.DefaultRequestHeaders.Add("User-Agent", "Equinor-Archiver");
         }
 
         private void SetPreviewHeader(bool preview = true)
         {
             if (preview)
             {
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Add("Accept", previewAcceptHeader);
+                Client.DefaultRequestHeaders.Accept.Clear();
+                Client.DefaultRequestHeaders.Add("Accept", PreviewAcceptHeader);
             }
             else
             {
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Add("Accept", defaultAcceptHeader);
+                Client.DefaultRequestHeaders.Accept.Clear();
+                Client.DefaultRequestHeaders.Add("Accept", DefaultAcceptHeader);
             }
         }
 
@@ -45,7 +45,7 @@ namespace ms_continuus
             try
             {
 
-                var responseBody = await client.GetAsync(url);
+                var responseBody = await Client.GetAsync(url);
                 responseBody.EnsureSuccessStatusCode();
                 string content = await responseBody.Content.ReadAsStringAsync();
                 return JObject.Parse(content);
@@ -63,7 +63,7 @@ namespace ms_continuus
             try
             {
 
-                var responseBody = await client.GetAsync(url);
+                var responseBody = await Client.GetAsync(url);
                 responseBody.EnsureSuccessStatusCode();
                 string content = await responseBody.Content.ReadAsStringAsync();
                 return JArray.Parse(content);
@@ -83,7 +83,7 @@ namespace ms_continuus
             int page = 1;
             while (true)
             {
-                JArray repos = await this.GetJsonArray($"{repo_url}?per_page=100&page={page}");
+                JArray repos = await this.GetJsonArray($"{_repoUrl}?per_page=100&page={page}");
                 if (repos == null) { Environment.Exit(1); }
                 foreach (JObject repo in repos)
                 {
@@ -99,7 +99,7 @@ namespace ms_continuus
         public async Task<List<Migration>> ListMigrations()
         {
             SetPreviewHeader(true);
-            JArray migrations = await this.GetJsonArray(migrations_url);
+            JArray migrations = await this.GetJsonArray(_migrationsUrl);
             if (migrations == null) { Environment.Exit(1); }
 
             List<Migration> migrationsList = new List<Migration>();
@@ -119,7 +119,7 @@ namespace ms_continuus
         public async Task<Migration> MigrationStatus(int migrationId)
         {
             SetPreviewHeader(true);
-            JObject migration = await this.GetJsonObject(migrations_url + "/" + migrationId.ToString());
+            JObject migration = await this.GetJsonObject(_migrationsUrl + "/" + migrationId.ToString());
             if (migration == null) { Environment.Exit(1); }
             return new Migration(
                     int.Parse(migration["id"].ToString()),
@@ -145,7 +145,7 @@ namespace ms_continuus
                 try
                 {
                     var timeStarted = DateTime.Now;
-                    var response = await client.GetAsync($"{migrations_url}/{migrationId.ToString()}/archive", HttpCompletionOption.ResponseHeadersRead);
+                    var response = await Client.GetAsync($"{_migrationsUrl}/{migrationId.ToString()}/archive", HttpCompletionOption.ResponseHeadersRead);
                     response.EnsureSuccessStatusCode();
                     string archiveSize = Utility.BytesToString(response.Content.Headers.ContentLength.GetValueOrDefault());
                     Console.WriteLine($"\tSize of archive is {archiveSize}");
@@ -174,7 +174,7 @@ namespace ms_continuus
         {
             string payload = $"{{\"repositories\": {JsonConvert.SerializeObject(repositoryList)}}}";
             SetPreviewHeader(true);
-            HttpResponseMessage response = await client.PostAsync(migrations_url, new StringContent(payload));
+            HttpResponseMessage response = await Client.PostAsync(_migrationsUrl, new StringContent(payload));
             response.EnsureSuccessStatusCode();
             string content = await response.Content.ReadAsStringAsync();
             JObject migration = JObject.Parse(content);

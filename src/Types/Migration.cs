@@ -5,25 +5,25 @@ namespace ms_continuus
 {
     public class Migration
     {
-        public int id;
-        public string guid;
-        public string state;
+        public readonly int Id;
+        public readonly string Guid;
+        public readonly string State;
 
-        public DateTime? started;
-        public List<String> repositories;
+        public DateTime? Started;
+        public readonly List<string> Repositories;
 
-        public Migration(int id, string guid, string state, DateTime? started = null, List<String> repositories = null)
+        public Migration(int id, string guid, string state, DateTime? started = null, List<string> repositories = null)
         {
-            this.id = id;
-            this.guid = guid;
-            this.state = state;
-            this.started = started;
-            this.repositories = repositories;
+            this.Id = id;
+            this.Guid = guid;
+            this.State = state;
+            this.Started = started;
+            this.Repositories = repositories;
         }
 
         public override string ToString()
         {
-            return $"Migration: {{ id: {id}, guid: {guid}, state: {state}, started: {started} }}";
+            return $"Migration: {{ id: {Id}, guid: {Guid}, state: {State}, started: {Started} }}";
         }
     }
 }

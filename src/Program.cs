@@ -7,10 +7,11 @@ namespace ms_continuus
 {
     class Program
     {
-        private static Config config = new Config();
-        static async Task DeleteWeeklyBlobs()
+        private static readonly Config Config = new Config();
+
+        private static async Task DeleteWeeklyBlobs()
         {
-            DateTime olderThan = Utility.DateMinusDays(config.WEEKLY_RETENTION);
+            DateTime olderThan = Utility.DateMinusDays(Config.WeeklyRetention);
             Console.WriteLine($"Deleting blobs with retention='weekly' older than {olderThan}");
 
             BlobStorage blobStorage = new BlobStorage();
@@ -20,7 +21,7 @@ namespace ms_continuus
 
         static async Task DeleteMonthlyBlobs()
         {
-            DateTime olderThan = Utility.DateMinusDays(config.MONTHLY_RETENTION);
+            DateTime olderThan = Utility.DateMinusDays(Config.MonthlyRetention);
             Console.WriteLine($"Deleting blobs with retention='monthly' older than {olderThan}");
 
             BlobStorage blobStorage = new BlobStorage();
@@ -63,26 +64,26 @@ namespace ms_continuus
             int migrationIndex = 0;
             foreach (Migration migration in startedMigrations)
             {
-                Migration migStatus = await api.MigrationStatus(migration.id);
+                Migration migStatus = await api.MigrationStatus(migration.Id);
                 int exportTimer = 0;
                 int sleepIntervalSeconds = 30;
-                while (migStatus.state != "exported")
+                while (migStatus.State != "exported")
                 {
                     Thread.Sleep(sleepIntervalSeconds * 1000);
-                    migStatus = await api.MigrationStatus(migStatus.id);
-                    if (migStatus.state == "failed")
+                    migStatus = await api.MigrationStatus(migStatus.Id);
+                    if (migStatus.State == "failed")
                     {
-                        failedToMigrate[migration.id.ToString()] = migration.repositories;
-                        Console.WriteLine($"WARNING: Migration {migration.id.ToString()} failed... continuing with next");
+                        failedToMigrate[migration.Id.ToString()] = migration.Repositories;
+                        Console.WriteLine($"WARNING: Migration {migration.Id.ToString()} failed... continuing with next");
                         break;
                     }
                     exportTimer++;
                     Console.WriteLine($"Waiting for {migStatus.ToString()} to be ready... waited {exportTimer * sleepIntervalSeconds} seconds");
                 }
-                if (migStatus.state == "failed") { continue; }
+                if (migStatus.State == "failed") { continue; }
 
                 Console.WriteLine($"Ready;\t{migStatus}");
-                string archivePath = await api.DownloadArchive(migStatus.id, migrationIndex);
+                string archivePath = await api.DownloadArchive(migStatus.Id, migrationIndex);
                 await blobStorage.UploadArchive(archivePath);
                 migrationIndex++;
             }
@@ -105,7 +106,7 @@ namespace ms_continuus
 
         static async Task Main(string[] args)
         {
-            Console.WriteLine(config.ToString());
+            Console.WriteLine(Config.ToString());
             Console.WriteLine($"Starting backup of Github organization");
             DateTime startTime = DateTime.Now;
             await BackupArchive();
