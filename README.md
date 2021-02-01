@@ -41,3 +41,6 @@ LifeCycleManagement is configured to delete old blobs following these rules;
 - Some timings overview
   - Approx. 30min to migrate 100 repositories
   - 100 repositories with attachements ~= 6GB
+
+## Developing / testing locally
+You need to [generate a Personal Access Token](https://github.com/settings/tokens/new), with all the `repo`, and `user` permissions.
