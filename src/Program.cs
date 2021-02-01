@@ -73,8 +73,7 @@ namespace ms_continuus
                     if (migStatus.State == "failed")
                     {
                         failedToMigrate[migration.Id.ToString()] = migration.Repositories;
-                        Console.WriteLine(
-                            $"WARNING: Migration {migration.Id.ToString()} failed... continuing with next");
+                        Console.WriteLine($"WARNING: Migration {migration.Id} failed... continuing with next");
                         break;
                     }
 
@@ -115,7 +114,7 @@ namespace ms_continuus
             await DeleteMonthlyBlobs();
             var totalRunTime = DateTime.Now - startTime;
             Console.WriteLine(
-                $"MS-Continuus run complete. Started at {startTime.ToString()}, finished at {DateTime.Now.ToString()}, total run time: {totalRunTime.ToString()}");
+                $"MS-Continuus run complete. Started at {startTime}, finished at {DateTime.Now}, total run time: {totalRunTime}");
         }
     }
 }
