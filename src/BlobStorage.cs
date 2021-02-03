@@ -99,7 +99,7 @@ namespace ms_continuus
         public async Task<List<BlobItem>> ListBlobs()
         {
             var blobList = new List<BlobItem>();
-            await foreach (var blobItem in _containerClient.GetBlobsAsync(BlobTraits.All)) blobList.Add(blobItem);
+            await foreach (var blobItem in _containerClient.GetBlobsAsync(BlobTraits.Metadata)) blobList.Add(blobItem);
 
             return blobList;
         }
