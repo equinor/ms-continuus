@@ -19,9 +19,8 @@ namespace ms_continuus
         {
             try
             {
-                Console.WriteLine($"Ensuring Blob container '{Config.BlobContainer}'...");
+                Console.WriteLine($"Ensuring Blob container '{BlobServiceClient.Uri}/{Config.BlobContainer}'");
                 BlobContainerClient container = await BlobServiceClient.CreateBlobContainerAsync(Config.BlobContainer);
-                Console.WriteLine("Done!");
                 _containerClient = container;
             }
             catch (RequestFailedException error)

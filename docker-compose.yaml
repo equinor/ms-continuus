@@ -1,14 +1,13 @@
-version: "3.4"
+version: "3.8"
 
 services:
 
   ms-continuus:
     image: sdpequinor/ms-continuus
-    build:
-      context: .
+    build: .
     environment:
       GITHUB_ORG: equinor
       BLOB_CONTAINER: github-archives
-      WEEKLY_RETENTION: 1
+      WEEKLY_RETENTION: 60
       GITHUB_TOKEN: ${GITHUB_TOKEN}
       STORAGE_KEY: ${STORAGE_KEY}

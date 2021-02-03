@@ -13,20 +13,11 @@ services:
         "
     depends_on:
       - storage-emulator
-    env_file:
-      - .env
 
   storage-emulator:
     image: mcr.microsoft.com/azure-storage/azurite
     volumes:
-      - "blobStorage:/data"
+      - "./blobStorage:/data"
     ports:
-      - "10000:10000"  # Blobs
-    command: [
-        "azurite",
-        "--blobHost", "0.0.0.0",
-        "--oauth", "basic",
-    ]
-
-volumes:
-  blobStorage: {}
+      - "10000:10000" # Blobs
+    command: ["azurite","--blobHost", "0.0.0.0"]
