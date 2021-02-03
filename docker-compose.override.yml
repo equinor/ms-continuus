@@ -2,15 +2,6 @@ version: "3.8"
 
 services:
   ms-continuus:
-    environment:
-      # Uses the default azurite storage account
-      # For more information, see https://docs.microsoft.com/en-us/azure/storage/common/storage-use-emulator#authorize-with-shared-key-credentials
-      STORAGE_KEY: "\
-        DefaultEndpointsProtocol=http;\
-        AccountName=devstoreaccount1;\
-        AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;\
-        BlobEndpoint=http://storage-emulator:10000/devstoreaccount1;\
-        "
     depends_on:
       - storage-emulator
 

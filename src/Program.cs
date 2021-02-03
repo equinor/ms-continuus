@@ -31,12 +31,12 @@ namespace ms_continuus
             Migration migStatus = await Api.MigrationStatus(migration.Id);
             var exportTimer = 0;
             const int sleepIntervalSeconds = 30;
-            while (migStatus.State != "exported")
+            while (migStatus.State != MigrationStatus.exported)
             {
                 Thread.Sleep(sleepIntervalSeconds * 1_000);
 
                 migStatus = await Api.MigrationStatus(migStatus.Id);
-                if (migStatus.State != "failed") return false;
+                if (migStatus.State == MigrationStatus.failed) return false;
 
                 exportTimer++;
                 Console.WriteLine(
