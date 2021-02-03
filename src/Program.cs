@@ -1,88 +1,91 @@
-﻿using System;
-using System.Threading.Tasks;
-using System.Threading;
+using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ms_continuus
 {
-    class Program
+    internal static class Program
     {
-        private static Config config = new Config();
-        static async Task DeleteWeeklyBlobs()
+        private static readonly Config Config = new();
+
+        private static async Task DeleteWeeklyBlobs()
         {
-            DateTime olderThan = Utility.DateMinusDays(config.WEEKLY_RETENTION);
+            var olderThan = Utility.DateMinusDays(Config.WeeklyRetention);
             Console.WriteLine($"Deleting blobs with retention='weekly' older than {olderThan}");
 
-            BlobStorage blobStorage = new BlobStorage();
+            var blobStorage = new BlobStorage();
             await blobStorage.EnsureContainer();
             await blobStorage.DeleteArchivesBefore(olderThan, "weekly");
         }
 
-        static async Task DeleteMonthlyBlobs()
+        private static async Task DeleteMonthlyBlobs()
         {
-            DateTime olderThan = Utility.DateMinusDays(config.MONTHLY_RETENTION);
+            var olderThan = Utility.DateMinusDays(Config.MonthlyRetention);
             Console.WriteLine($"Deleting blobs with retention='monthly' older than {olderThan}");
 
-            BlobStorage blobStorage = new BlobStorage();
+            var blobStorage = new BlobStorage();
             await blobStorage.EnsureContainer();
             await blobStorage.DeleteArchivesBefore(olderThan, "monthly");
-
         }
 
-        static async Task BackupArchive()
+        private static async Task BackupArchive()
         {
-            Api api = new Api();
-            BlobStorage blobStorage = new BlobStorage();
+            var api = new Api();
+            var blobStorage = new BlobStorage();
             await blobStorage.EnsureContainer();
             // Each migration can contain approx. 100~120 repositories
             // to keep the API from timing out. This also makes sense for retrying
             // smaller parts that failed in some way.
-            int chunkSize = 100;
-            List<Migration> startedMigrations = new List<Migration>();
-            List<string> allRepositoryList = new List<string>();
-            Dictionary<string, List<String>> failedToMigrate = new Dictionary<string, List<String>>();
+            const int chunkSize = 100;
+            var startedMigrations = new List<Migration>();
+            var failedToMigrate = new Dictionary<string, List<string>>();
 
             Console.WriteLine("Fetching all repositories...");
-            allRepositoryList = await api.ListRepositories();
+            var allRepositoryList = await api.ListRepositories();
 
-            int chunks = allRepositoryList.Count / chunkSize;
-            int remainder = allRepositoryList.Count % chunkSize;
+            var chunks = allRepositoryList.Count / chunkSize;
+            var remainder = allRepositoryList.Count % chunkSize;
 
-            Console.WriteLine($"Starting migration of {allRepositoryList.Count} repositories divided into {chunks + 1} chunks");
+            Console.WriteLine(
+                $"Starting migration of {allRepositoryList.Count} repositories divided into {chunks + 1} chunks");
             // Start the smallest migration first (remainder)
-            startedMigrations.Add(await api.StartMigration(allRepositoryList.GetRange((chunks * chunkSize), remainder)));
+            startedMigrations.Add(await api.StartMigration(allRepositoryList.GetRange(chunks * chunkSize, remainder)));
 
-            for (int i = 0; i < chunks; i++)
+            for (var i = 0; i < chunks; i++)
             {
-                List<string> chunkedRepositoryList = allRepositoryList.GetRange(i, chunkSize);
+                var chunkedRepositoryList = allRepositoryList.GetRange(i, chunkSize);
                 startedMigrations.Add(await api.StartMigration(chunkedRepositoryList));
             }
 
             // Iterate through all the started migrations, wait for them to complete,
             // download them, and upload them to blob-storage
-            int migrationIndex = 0;
-            foreach (Migration migration in startedMigrations)
+            var migrationIndex = 0;
+            foreach (var migration in startedMigrations)
             {
-                Migration migStatus = await api.MigrationStatus(migration.id);
-                int exportTimer = 0;
-                int sleepIntervalSeconds = 30;
-                while (migStatus.state != "exported")
+                var migStatus = await api.MigrationStatus(migration.Id);
+                var exportTimer = 0;
+                const int sleepIntervalSeconds = 30;
+                while (migStatus.State != "exported")
                 {
-                    Thread.Sleep(sleepIntervalSeconds * 1000);
-                    migStatus = await api.MigrationStatus(migStatus.id);
-                    if (migStatus.state == "failed")
+                    Thread.Sleep(sleepIntervalSeconds * 1_000);
+                    migStatus = await api.MigrationStatus(migStatus.Id);
+                    if (migStatus.State == "failed")
                     {
-                        failedToMigrate[migration.id.ToString()] = migration.repositories;
-                        Console.WriteLine($"WARNING: Migration {migration.id.ToString()} failed... continuing with next");
+                        failedToMigrate[migration.Id.ToString()] = migration.Repositories;
+                        Console.WriteLine($"WARNING: Migration {migration.Id} failed... continuing with next");
                         break;
                     }
+
                     exportTimer++;
-                    Console.WriteLine($"Waiting for {migStatus.ToString()} to be ready... waited {exportTimer * sleepIntervalSeconds} seconds");
+                    Console.WriteLine(
+                        $"Waiting for {migStatus} to be ready... waited {exportTimer * sleepIntervalSeconds} seconds");
                 }
-                if (migStatus.state == "failed") { continue; }
+
+                if (migStatus.State == "failed") continue;
 
                 Console.WriteLine($"Ready;\t{migStatus}");
-                string archivePath = await api.DownloadArchive(migStatus.id, migrationIndex);
+                var archivePath = await api.DownloadArchive(migStatus.Id, migrationIndex);
                 await blobStorage.UploadArchive(archivePath);
                 migrationIndex++;
             }
@@ -90,11 +93,9 @@ namespace ms_continuus
             // Summary of failed migrations
             if (failedToMigrate.Count > 0)
             {
-                Console.WriteLine($"WARNING: Some migration requests failed to migrate");
-                foreach (var item in failedToMigrate)
-                {
-                    Console.WriteLine($"\tMigration Id: {item.Key}, Repositories: [{string.Join(",", item.Value)}]");
-                }
+                Console.WriteLine("WARNING: Some migration requests failed to migrate");
+                foreach (var (key, value) in failedToMigrate)
+                    Console.WriteLine($"\tMigration Id: {key}, Repositories: [{string.Join(",", value)}]");
                 Environment.Exit(2);
             }
             else
@@ -103,16 +104,17 @@ namespace ms_continuus
             }
         }
 
-        static async Task Main(string[] args)
+        private static async Task Main(string[] args)
         {
-            Console.WriteLine(config.ToString());
-            Console.WriteLine($"Starting backup of Github organization");
-            DateTime startTime = DateTime.Now;
+            Console.WriteLine(Config.ToString());
+            Console.WriteLine("Starting backup of Github organization");
+            var startTime = DateTime.Now;
             await BackupArchive();
             await DeleteWeeklyBlobs();
             await DeleteMonthlyBlobs();
-            TimeSpan totalRunTime = DateTime.Now - startTime;
-            Console.WriteLine($"MS-Continuus run complete. Started at {startTime.ToString()}, finnished at {DateTime.Now.ToString()}, total run time: {totalRunTime.ToString()}");
+            var totalRunTime = DateTime.Now - startTime;
+            Console.WriteLine(
+                $"MS-Continuus run complete. Started at {startTime}, finished at {DateTime.Now}, total run time: {totalRunTime}");
         }
     }
 }
