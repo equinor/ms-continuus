@@ -48,7 +48,7 @@ namespace ms_continuus
             var timeStarted = DateTime.Now;
             const int retryInterval = 30_000;
             var attempts = 1;
-            var fileName = Path.GetFileName(filePath);
+            var fileName = Path.GetFileName(filePath)?.Replace("%2F", "/");
             var blobClient = _containerClient.GetBlobClient(fileName);
             var metadata = new Dictionary<string, string>();
 
