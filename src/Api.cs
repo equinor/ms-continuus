@@ -139,8 +139,10 @@ namespace ms_continuus
             var paddedVolume = volume.ToString();
             if (volume < 10) paddedVolume = "0" + paddedVolume;
             Directory.CreateDirectory("./tmp");
+            // '%2F' is used to encode /. That way we do not need to deal with creating all necessary folders,
+            // in order to have the same structure in Azure 
             var fileName =
-                $"./tmp/archive-{DateTime.Now:dd_MM_yyyy}-vol.{paddedVolume}-{migrationId.ToString()}.tar.gz";
+                $"./tmp/{DateTime.Now:dd_MM_yyyy}%2Fvol.{paddedVolume}-{migrationId}.tar.gz";
             SetPreviewHeader();
             Console.WriteLine($"Downloading archive {migrationId}");
             var attempts = 1;
