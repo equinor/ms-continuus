@@ -17,6 +17,14 @@ namespace ms_continuus
                 BlobContainer = "github-archives";
             }
 
+            GithubURL = Environment.GetEnvironmentVariable("GITHUB_URL");
+            if (GithubURL == null)
+            {
+                Console.WriteLine(
+                    "WARNING: Environment variable 'GITHUB_URL' not set. Will assume 'https://api.github.com'");
+                GithubURL = "https://api.github.com";
+            }
+
             // Set tag to 'monthly' for the first week of the month.
             BlobTag = Environment.GetEnvironmentVariable("BLOB_TAG") ?? (DateTime.Today.Day < 8 ? "monthly" : "weekly");
 
@@ -40,6 +48,7 @@ namespace ms_continuus
 
         public string Organization { get; }
         public string BlobContainer { get; }
+        public string GithubURL { get; }
         public string BlobTag { get; }
         public int WeeklyRetention { get; }
         public int MonthlyRetention { get; }
@@ -49,6 +58,7 @@ namespace ms_continuus
 
         public override string ToString()
         {
+            var ghUrl = $"\n\tGITHUB URL: {GithubURL}";
             var org = $"\n\tORGANIZATION: {Organization}";
             var container = $"\n\tBLOB_CONTAINER: {BlobContainer}";
             var tag = $"\n\tBLOB_TAG: {BlobTag}";
@@ -56,7 +66,7 @@ namespace ms_continuus
             var monthRet = $"\n\tMONTHLY_RETENTION: {MonthlyRetention}";
             var yearRet = $"\n\tYEARLY_RETENTION: {YearlyRetention}";
 
-            return "Configuration settings:" + org + container + tag + weekRet + monthRet + yearRet;
+            return "Configuration settings:" + ghUrl + org + container + tag + weekRet + monthRet + yearRet;
         }
     }
 }

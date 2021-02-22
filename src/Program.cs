@@ -52,7 +52,11 @@ namespace ms_continuus
             // Each migration can contain approx. 100~120 repositories
             // to keep the API from timing out. This also makes sense for retrying
             // smaller parts that failed in some way.
+
+            // Use this for the mock API
+            // const int chunkSize = 3;
             const int chunkSize = 100;
+
             var startedMigrations = new List<Migration>();
             var failedToMigrate = new Dictionary<int, (List<string>, int)>();
 
@@ -69,7 +73,7 @@ namespace ms_continuus
 
             for (var i = 0; i < chunks; i++)
             {
-                var chunkedRepositoryList = allRepositoryList.GetRange(i, chunkSize);
+                var chunkedRepositoryList = allRepositoryList.GetRange(i*chunkSize, chunkSize);
                 startedMigrations.Add(await Api.StartMigration(chunkedRepositoryList));
             }
 
@@ -84,11 +88,11 @@ namespace ms_continuus
                 {
                         failedToMigrate[migration.Id] = (migration.Repositories, i);
                         Console.WriteLine($"WARNING: Migration {migration.Id} failed... continuing with next");
-                        break;
                     }
             }
 
             // Go a second round to retry failed exports
+            Console.WriteLine($"Retrying {failedToMigrate.Count} failed exports...");
             startedMigrations.Clear();
             foreach (var (id, (repos,volume)) in failedToMigrate)
             {

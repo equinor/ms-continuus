@@ -14,14 +14,9 @@ namespace ms_continuus
         private const string PreviewAcceptHeader = "application/vnd.github.wyandotte-preview+json";
         private const string DefaultAcceptHeader = "application/vnd.github.v3+json";
         private static readonly Config Config = new();
-
         private static readonly HttpClient Client = new();
-
-        // private string migrations_url = $"https://api.github.com/user/migrations";
-        private readonly string _migrationsUrl = $"https://api.github.com/orgs/{Config.Organization}/migrations";
-
-        // private string repo_url = $"https://api.github.com/users/soofstad/repos";
-        private readonly string _repoUrl = $"https://api.github.com/orgs/{Config.Organization}/repos";
+        private readonly string _migrationsUrl = $"{Config.GithubURL}/orgs/{Config.Organization}/migrations";
+        private readonly string _repoUrl = $"{Config.GithubURL}/orgs/{Config.Organization}/repos";
 
         public Api()
         {
@@ -140,9 +135,9 @@ namespace ms_continuus
             if (volume < 10) paddedVolume = "0" + paddedVolume;
             Directory.CreateDirectory("./tmp");
             // '%2F' is used to encode /. That way we do not need to deal with creating all necessary folders,
-            // in order to have the same structure in Azure 
+            // in order to have the same structure in Azure
             var fileName =
-                $"./tmp/{DateTime.Now:dd_MM_yyyy}%2Fvol.{paddedVolume}-{migrationId}.tar.gz";
+                $"./tmp/{DateTime.Now:dd_MM_yyyy}%2Fvol{paddedVolume}-{migrationId}.tar.gz";
             SetPreviewHeader();
             Console.WriteLine($"Downloading archive {migrationId}");
             var attempts = 1;
