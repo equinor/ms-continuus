@@ -14,9 +14,9 @@ services:
     command: ["azurite","--blobHost", "0.0.0.0", "--location", "/data"]
 
   mock-api:
-    image: python:alpine
+    build: mock_api
     volumes:
-      - ./test_api:/app
+      - ./mock_api:/app
     ports:
-      - "80:5000"
+      - "5000:5000"
     command: "python /app/mock_gh_api.py"

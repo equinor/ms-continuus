@@ -36,7 +36,10 @@ namespace ms_continuus
                 Thread.Sleep(sleepIntervalSeconds * 1_000);
 
                 migStatus = await Api.MigrationStatus(migStatus.Id);
-                if (migStatus.State == MigrationStatus.failed) return false;
+                if (migStatus.State == MigrationStatus.failed){
+                    Console.WriteLine($"WARNING: Migration {migration.Id} failed... continuing with next");
+                    return false;
+                }
 
                 exportTimer++;
                 Console.WriteLine(
@@ -74,7 +77,12 @@ namespace ms_continuus
             for (var i = 0; i < chunks; i++)
             {
                 var chunkedRepositoryList = allRepositoryList.GetRange(i*chunkSize, chunkSize);
-                startedMigrations.Add(await Api.StartMigration(chunkedRepositoryList));
+                try{
+                    startedMigrations.Add(await Api.StartMigration(chunkedRepositoryList));
+                }catch (System.Net.Http.HttpRequestException error){
+                    Console.WriteLine($"WARNING: Failed to start migration...{error.Message}");
+                }
+
             }
 
             // Iterate through all the started migrations, wait for them to complete,
@@ -84,11 +92,7 @@ namespace ms_continuus
                 var migration = startedMigrations[i];
                 var uploaded = await DownloadAndUpload(migration, i);
 
-                if (!uploaded)
-                {
-                        failedToMigrate[migration.Id] = (migration.Repositories, i);
-                        Console.WriteLine($"WARNING: Migration {migration.Id} failed... continuing with next");
-                    }
+                if (!uploaded) failedToMigrate[migration.Id] = (migration.Repositories, i);
             }
 
             // Go a second round to retry failed exports

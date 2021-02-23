@@ -136,4 +136,4 @@ dmypy.json
 /bin/
 /obj/
 /tmp/
-test_api/archive1
+mock_api/archive1
