@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 
 namespace ms_continuus
 {
@@ -30,6 +31,11 @@ namespace ms_continuus
             var avgBytes = totalBytes / elapsedSeconds;
             var bytesToString = BytesToString(avgBytes);
             return $"{bytesToString}/sec";
+        }
+        public static void PrintVersion()
+        {
+            var versionFile = File.ReadAllLines("src/version");
+            Console.WriteLine($"Version: {versionFile[0]}");
         }
     }
 }

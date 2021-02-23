@@ -131,6 +131,7 @@ namespace ms_continuus
 
         private static async Task Main(string[] args)
         {
+            Utility.PrintVersion();
             Console.WriteLine(Config.ToString());
             Console.WriteLine("Starting backup of Github organization");
             var startTime = DateTime.Now;
