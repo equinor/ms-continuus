@@ -137,7 +137,7 @@ namespace ms_continuus
             // '%2F' is used to encode /. That way we do not need to deal with creating all necessary folders,
             // in order to have the same structure in Azure
             var fileName =
-                $"./tmp/{DateTime.Now:dd_MM_yyyy}%2Fvol{paddedVolume}-{migrationId}-{Utility.HashStingArray(repoList)}.tar.gz";
+                $"./tmp/{DateTime.Now:dd_MM_yyyy}%2Fvol{paddedVolume}-{Utility.HashStingArray(repoList)}-{migrationId}.tar.gz";
             SetPreviewHeader();
             Console.WriteLine($"Downloading archive {migrationId}");
             var attempts = 1;

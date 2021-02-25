@@ -112,10 +112,11 @@ namespace ms_continuus
                 Migration migration = startedMigrations[i];
                 // Grab original volume/chunk number based on index in the list.
                 var volume = failedToMigrate.Values.ElementAt(i).Item2;
+                var oldId = failedToMigrate.ElementAt(i).Key;
                 var uploaded = await DownloadAndUpload(migration, volume);
 
                 // If the migration succeeded the second time, remove it from the list of failed migrations
-                if (uploaded) failedToMigrate.Remove(migration.Id);
+                if (uploaded) failedToMigrate.Remove(oldId);
             }
 
 
@@ -125,7 +126,6 @@ namespace ms_continuus
                 Console.WriteLine("WARNING: Some migration requests failed to migrate");
                 foreach (var (id, (repos, volume)) in failedToMigrate)
                     Console.WriteLine($"\tMigration Id: {id}, Repositories: [{string.Join(",", repos)}]");
-                Environment.Exit(2);
             }
             else
             {
