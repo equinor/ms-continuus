@@ -36,7 +36,8 @@ namespace ms_continuus
                 Thread.Sleep(sleepIntervalSeconds * 1_000);
 
                 migStatus = await Api.MigrationStatus(migStatus.Id);
-                if (migStatus.State == MigrationStatus.failed){
+                if (migStatus.State == MigrationStatus.failed)
+                {
                     Console.WriteLine($"WARNING: Migration {migration.Id} failed... continuing with next");
                     return false;
                 }
@@ -45,7 +46,7 @@ namespace ms_continuus
                 Console.WriteLine(
                     $"Waiting for {migStatus} to be ready... waited {exportTimer * sleepIntervalSeconds} seconds");
             }
-            string archivePath = await Api.DownloadArchive(migStatus.Id, index);
+            string archivePath = await Api.DownloadArchive(migStatus.Id, index, migration.Repositories);
             await BlobStorage.UploadArchive(archivePath);
             return true;
         }
@@ -76,10 +77,13 @@ namespace ms_continuus
 
             for (var i = 0; i < chunks; i++)
             {
-                var chunkedRepositoryList = allRepositoryList.GetRange(i*chunkSize, chunkSize);
-                try{
+                var chunkedRepositoryList = allRepositoryList.GetRange(i * chunkSize, chunkSize);
+                try
+                {
                     startedMigrations.Add(await Api.StartMigration(chunkedRepositoryList));
-                }catch (System.Net.Http.HttpRequestException error){
+                }
+                catch (System.Net.Http.HttpRequestException error)
+                {
                     Console.WriteLine($"WARNING: Failed to start migration...{error.Message}");
                 }
 
@@ -98,7 +102,7 @@ namespace ms_continuus
             // Go a second round to retry failed exports
             Console.WriteLine($"Retrying {failedToMigrate.Count} failed exports...");
             startedMigrations.Clear();
-            foreach (var (id, (repos,volume)) in failedToMigrate)
+            foreach (var (id, (repos, volume)) in failedToMigrate)
             {
                 startedMigrations.Add(await Api.StartMigration(repos));
             }
@@ -108,10 +112,11 @@ namespace ms_continuus
                 Migration migration = startedMigrations[i];
                 // Grab original volume/chunk number based on index in the list.
                 var volume = failedToMigrate.Values.ElementAt(i).Item2;
+                var oldId = failedToMigrate.ElementAt(i).Key;
                 var uploaded = await DownloadAndUpload(migration, volume);
 
                 // If the migration succeeded the second time, remove it from the list of failed migrations
-                if (uploaded) failedToMigrate.Remove(migration.Id);
+                if (uploaded) failedToMigrate.Remove(oldId);
             }
 
 
@@ -119,9 +124,8 @@ namespace ms_continuus
             if (failedToMigrate.Count > 0)
             {
                 Console.WriteLine("WARNING: Some migration requests failed to migrate");
-                foreach (var (id, (repos,volume)) in failedToMigrate)
+                foreach (var (id, (repos, volume)) in failedToMigrate)
                     Console.WriteLine($"\tMigration Id: {id}, Repositories: [{string.Join(",", repos)}]");
-                Environment.Exit(2);
             }
             else
             {
