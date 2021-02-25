@@ -1,10 +1,10 @@
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
 
 WORKDIR /app
-COPY *.csproj ./
+ADD *.csproj ./
 RUN dotnet restore
 
-COPY src LICENSE README.md ./
+ADD src LICENSE README.md ./
 RUN dotnet publish -c Release -o out
 
 
@@ -13,4 +13,5 @@ LABEL org.opencontainers.image.source="https://github.com/equinor/ms-continuus"
 WORKDIR /app
 
 COPY --from=build /app/out .
-ENTRYPOINT ["dotnet", "ms-continuus.dll"]
+ADD src/version /app/src/version
+CMD ["dotnet", "ms-continuus.dll"]
