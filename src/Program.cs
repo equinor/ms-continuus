@@ -63,6 +63,7 @@ namespace ms_continuus
 
             var startedMigrations = new List<Migration>();
             var failedToMigrate = new Dictionary<int, (List<string>, int)>();
+            var failedToMigrate2 = new Dictionary<int, (List<string>, int)>();
 
             Console.WriteLine("Fetching all repositories...");
             var allRepositoryList = await Api.ListRepositories();
@@ -115,16 +116,15 @@ namespace ms_continuus
                 var oldId = failedToMigrate.ElementAt(i).Key;
                 var uploaded = await DownloadAndUpload(migration, volume);
 
-                // If the migration succeeded the second time, remove it from the list of failed migrations
-                if (uploaded) failedToMigrate.Remove(oldId);
+                if (!uploaded) failedToMigrate2[migration.Id] = (migration.Repositories, volume);
             }
 
 
             // Summary of failed migrations
-            if (failedToMigrate.Count > 0)
+            if (failedToMigrate2.Count > 0)
             {
                 Console.WriteLine("WARNING: Some migration requests failed to migrate");
-                foreach (var (id, (repos, volume)) in failedToMigrate)
+                foreach (var (id, (repos, volume)) in failedToMigrate2)
                     Console.WriteLine($"\tMigration Id: {id}, Repositories: [{string.Join(",", repos)}]");
             }
             else
