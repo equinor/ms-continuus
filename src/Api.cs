@@ -18,6 +18,8 @@ namespace ms_continuus
         private readonly string _migrationsUrl = $"{Config.GithubURL}/orgs/{Config.Organization}/migrations";
         private readonly string _repoUrl = $"{Config.GithubURL}/orgs/{Config.Organization}/repos";
 
+        private readonly string DateToday = $"{DateTime.Now:dd_MM_yyyy}";
+
         public Api()
         {
             Client.DefaultRequestHeaders.Add("Authorization", $"Bearer {Config.GithubToken}");
@@ -137,7 +139,7 @@ namespace ms_continuus
             // '%2F' is used to encode /. That way we do not need to deal with creating all necessary folders,
             // in order to have the same structure in Azure
             var fileName =
-                $"./tmp/{DateTime.Now:dd_MM_yyyy}%2Fvol{paddedVolume}-{Utility.HashStingArray(repoList)}-{migrationId}.tar.gz";
+                $"./tmp/{DateToday}%2Fvol{paddedVolume}-{Utility.HashStingArray(repoList)}-{migrationId}.tar.gz";
             SetPreviewHeader();
             Console.WriteLine($"Downloading archive {migrationId}");
             var attempts = 1;
