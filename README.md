@@ -25,7 +25,7 @@ ms-continuus is configured entirely with environment variables.
   |MONTHLY_RETENTION:|230|Delete blobs with retentionClass='monthly' older than n-days|
   |YEARLY_RETENTION:|420|Delete blobs with retentionClass='yearly' older than n-days|
   |GITHUB_TOKEN:|null|Required: Github Personal Access Token|
-  |STORAGE_KEY:|null|Required: Azure StorageAccount ConnectionString|
+  |STORAGE_ACCOUNT_CON_STRING:|null|Required: Azure StorageAccount ConnectionString|
 
 ## (TODO: Waiting for Blob Idex Tags Preview Feature)
 
