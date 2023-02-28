@@ -1,4 +1,4 @@
-FROM python
+FROM python:3.10
 WORKDIR /app
 ADD . /app
 RUN pip install poetry

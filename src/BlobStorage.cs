@@ -12,7 +12,7 @@ namespace ms_continuus
     public class BlobStorage
     {
         private static readonly Config Config = new();
-        private static readonly BlobServiceClient BlobServiceClient = new(Config.StorageKey);
+        private static readonly BlobServiceClient BlobServiceClient = new(Config.StorageAccountConnectionString);
         private BlobContainerClient _containerClient;
 
         public async Task EnsureContainer()

@@ -42,8 +42,8 @@ namespace ms_continuus
                 Console.WriteLine(
                     "WARNING: Environment variable 'GITHUB_TOKEN' not set. Will continue operating on public repositories only");
 
-            StorageKey = Environment.GetEnvironmentVariable("STORAGE_KEY");
-            if (StorageKey == null) throw new Exception("Environment variable 'STORAGE_KEY' missing");
+            StorageAccountConnectionString = Environment.GetEnvironmentVariable("STORAGE_ACCOUNT_CON_STRING");
+            if (StorageAccountConnectionString == null) throw new Exception("Environment variable 'STORAGE_ACCOUNT_CON_STRING' missing");
         }
 
         public string Organization { get; }
@@ -54,7 +54,7 @@ namespace ms_continuus
         public int MonthlyRetention { get; }
         public int YearlyRetention { get; }
         public string GithubToken { get; }
-        public string StorageKey { get; }
+        public string StorageAccountConnectionString { get; }
 
         public override string ToString()
         {
