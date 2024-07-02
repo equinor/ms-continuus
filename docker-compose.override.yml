@@ -1,9 +1,7 @@
-version: "3.8"
-
 services:
   ms-continuus:
     environment:
-      GITHUB_URL: http://mock-api:5000
+      # GITHUB_URL: http://mock-api:5000
       STORAGE_ACCOUNT_CON_STRING: DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://storage-emulator:10000/devstoreaccount1;
     depends_on:
       - storage-emulator
@@ -16,10 +14,10 @@ services:
       - "10000:10000"
     command: ["azurite","--blobHost", "0.0.0.0", "--location", "/data"]
 
-  mock-api:
-    build: mock_api
-    volumes:
-      - ./mock_api:/app
-    ports:
-      - "5000:5000"
-    command: "python /app/mock_gh_api.py"
+  # mock-api:
+  #   build: mock_api
+  #   volumes:
+  #     - ./mock_api:/app
+  #   ports:
+  #     - "5000:5000"
+  #   command: "python /app/mock_gh_api.py"

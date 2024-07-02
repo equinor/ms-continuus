@@ -1,9 +1,7 @@
-version: "3.8"
-
 services:
 
   ms-continuus:
-    image: sdpequinor/ms-continuus
+    image: ghcr.io/equinor/ms-continuus
     build: .
     environment:
       GITHUB_ORG: equinor
