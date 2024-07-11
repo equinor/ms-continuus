@@ -30,7 +30,7 @@ namespace ms_continuus
         {
             Migration migStatus = await Api.MigrationStatus(migration.Id);
             var exportTimer = 0;
-            const int sleepIntervalSeconds = 30;
+            const int sleepIntervalSeconds = 60;
             while (migStatus.State != MigrationStatus.exported)
             {
                 Thread.Sleep(sleepIntervalSeconds * 1_000);

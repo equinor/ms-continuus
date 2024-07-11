@@ -18,7 +18,7 @@ namespace ms_continuus
         private readonly string _migrationsUrl = $"{Config.GithubURL}/orgs/{Config.Organization}/migrations";
         private readonly string _repoUrl = $"{Config.GithubURL}/orgs/{Config.Organization}/repos";
 
-        private readonly string DateToday = $"{DateTime.Now:dd_MM_yyyy}";
+        private readonly string DateToday = $"{DateTime.Now:yyyy_MM_dd}";
 
         public Api()
         {
