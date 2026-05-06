@@ -158,6 +158,7 @@ namespace ms_continuus
             Console.WriteLine($"Uploading manifest '{manifestBlobName}' ({uploadedVolumes.Count} volumes, {allRepositories.Count} repositories)");
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
             await blobClient.UploadAsync(stream, overwrite: true);
+            await blobClient.SetMetadataAsync(new Dictionary<string, string> { ["retention"] = Config.BlobTag });
         }
     }
 }
