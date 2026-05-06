@@ -26,7 +26,7 @@ namespace ms_continuus
             await BlobStorage.DeleteArchivesBefore(olderThan, "monthly");
         }
 
-        private static async Task<bool> DownloadAndUpload(Migration migration, int index)
+        private static async Task<string?> DownloadAndUpload(Migration migration, int index)
         {
             Migration migStatus = await Api.MigrationStatus(migration.Id);
             var exportTimer = 0;
@@ -39,7 +39,7 @@ namespace ms_continuus
                 if (migStatus.State == MigrationStatus.failed)
                 {
                     Console.WriteLine($"WARNING: Migration {migration.Id} failed... continuing with next");
-                    return false;
+                    return null;
                 }
 
                 exportTimer++;
@@ -48,7 +48,7 @@ namespace ms_continuus
             }
             string archivePath = await Api.DownloadArchive(migStatus.Id, index, migration.Repositories);
             await BlobStorage.UploadArchive(archivePath);
-            return true;
+            return archivePath;
         }
 
         private static async Task BackupArchive()
@@ -92,12 +92,14 @@ namespace ms_continuus
 
             // Iterate through all the started migrations, wait for them to complete,
             // download them, and upload them to blob-storage
+            var uploadedVolumes = new List<(string archivePath, Migration migration, int volume)>();
             for (var i = 0; i < startedMigrations.Count; i++)
             {
                 var migration = startedMigrations[i];
-                var uploaded = await DownloadAndUpload(migration, i);
+                var archivePath = await DownloadAndUpload(migration, i);
 
-                if (!uploaded) failedToMigrate[migration.Id] = (migration.Repositories, i);
+                if (archivePath == null) failedToMigrate[migration.Id] = (migration.Repositories, i);
+                else uploadedVolumes.Add((archivePath, migration, i));
             }
 
             // Go a second round to retry failed exports
@@ -114,9 +116,10 @@ namespace ms_continuus
                 // Grab original volume/chunk number based on index in the list.
                 var volume = failedToMigrate.Values.ElementAt(i).Item2;
                 var oldId = failedToMigrate.ElementAt(i).Key;
-                var uploaded = await DownloadAndUpload(migration, volume);
+                var archivePath = await DownloadAndUpload(migration, volume);
 
-                if (!uploaded) failedToMigrate2[migration.Id] = (migration.Repositories, volume);
+                if (archivePath == null) failedToMigrate2[migration.Id] = (migration.Repositories, volume);
+                else uploadedVolumes.Add((archivePath, migration, volume));
             }
 
 
@@ -131,6 +134,14 @@ namespace ms_continuus
             {
                 Console.WriteLine($"Successfully uploaded all archives of {allRepositoryList.Count} repositories");
             }
+
+            var uploadedForManifest = uploadedVolumes
+                .Select(v => (v.archivePath, v.migration.Id, v.volume, v.migration.Repositories))
+                .ToList();
+            var failedForManifest = failedToMigrate2
+                .Select(kvp => (kvp.Value.Item1, kvp.Value.Item2))
+                .ToList();
+            await BlobStorage.UploadManifest(allRepositoryList, uploadedForManifest, failedForManifest);
         }
 
         private static async Task Main(string[] args)
