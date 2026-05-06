@@ -26,6 +26,13 @@ namespace ms_continuus
             await BlobStorage.DeleteArchivesBefore(olderThan, "monthly");
         }
 
+        private static async Task DeleteYearlyBlobs()
+        {
+            var olderThan = Utility.DateMinusDays(Config.YearlyRetention);
+            Console.WriteLine($"Deleting blobs with retention='yearly' older than {olderThan}");
+            await BlobStorage.DeleteArchivesBefore(olderThan, "yearly");
+        }
+
         private static async Task<string?> DownloadAndUpload(Migration migration, int index)
         {
             Migration migStatus = await Api.MigrationStatus(migration.Id);
@@ -154,6 +161,7 @@ namespace ms_continuus
             await BackupArchive();
             await DeleteWeeklyBlobs();
             await DeleteMonthlyBlobs();
+            await DeleteYearlyBlobs();
             Console.WriteLine(
                 $"MS-Continuus run complete. Started at {startTime}, finished at {DateTime.Now}, total run time: {DateTime.Now - startTime}");
         }
