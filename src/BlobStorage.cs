@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure;
@@ -121,6 +124,41 @@ namespace ms_continuus
                 if (defaultValue != tag) continue;
                 if (blobItem.Properties.CreatedOn < before) DeleteArchive(blobItem.Name);
             }
+        }
+
+        public async Task UploadManifest(
+            List<string> allRepositories,
+            List<(string archivePath, int migrationId, int volume, List<string> repositories)> uploadedVolumes,
+            List<(List<string> repositories, int volume)> failedVolumes)
+        {
+            var today = $"{DateTime.Now:yyyy_MM_dd}";
+            var manifestBlobName = $"{today}/manifest.json";
+            var blobClient = _containerClient.GetBlobClient(manifestBlobName);
+
+            var manifest = new
+            {
+                date = DateTime.Today.ToString("yyyy-MM-dd"),
+                organization = Config.Organization,
+                totalRepositories = allRepositories.Count,
+                volumes = uploadedVolumes.Select(v => new
+                {
+                    volume = v.volume,
+                    archiveBlob = Path.GetFileName(v.archivePath)?.Replace("%2F", "/"),
+                    migrationId = v.migrationId,
+                    repositories = v.repositories
+                }),
+                failedVolumes = failedVolumes.Select(f => new
+                {
+                    volume = f.volume,
+                    repositories = f.repositories
+                })
+            };
+
+            var json = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
+            Console.WriteLine($"Uploading manifest '{manifestBlobName}' ({uploadedVolumes.Count} volumes, {allRepositories.Count} repositories)");
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+            await blobClient.UploadAsync(stream, overwrite: true);
+            await blobClient.SetMetadataAsync(new Dictionary<string, string> { ["retention"] = Config.BlobTag });
         }
     }
 }

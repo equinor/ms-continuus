@@ -25,8 +25,9 @@ namespace ms_continuus
                 GithubURL = "https://api.github.com";
             }
 
-            // Set tag to 'monthly' for the first week of the month.
-            BlobTag = Environment.GetEnvironmentVariable("BLOB_TAG") ?? (DateTime.Today.Day < 8 ? "monthly" : "weekly");
+            // Set tag to 'yearly' for the first week of January, 'monthly' for the first week of any other month.
+            BlobTag = Environment.GetEnvironmentVariable("BLOB_TAG") ??
+                (DateTime.Today.Day < 8 ? (DateTime.Today.Month == 1 ? "yearly" : "monthly") : "weekly");
 
             var weeklyFromEnv = Environment.GetEnvironmentVariable("WEEKLY_RETENTION");
             WeeklyRetention = weeklyFromEnv == null ? 60 : int.Parse(weeklyFromEnv);
