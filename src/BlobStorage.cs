@@ -129,10 +129,10 @@ namespace ms_continuus
         public async Task UploadManifest(
             List<string> allRepositories,
             List<(string archivePath, int migrationId, int volume, List<string> repositories)> uploadedVolumes,
-            List<(List<string> repositories, int volume)> failedVolumes)
+            List<(List<string> repositories, int volume)> failedVolumes,
+            string runDate)
         {
-            var today = $"{DateTime.Now:yyyy_MM_dd}";
-            var manifestBlobName = $"{today}/manifest.json";
+            var manifestBlobName = $"{runDate}/manifest.json";
             var blobClient = _containerClient.GetBlobClient(manifestBlobName);
 
             var manifest = new
