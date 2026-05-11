@@ -45,6 +45,8 @@ namespace ms_continuus
 
             StorageAccountConnectionString = Environment.GetEnvironmentVariable("STORAGE_ACCOUNT_CON_STRING");
             if (StorageAccountConnectionString == null) throw new Exception("Environment variable 'STORAGE_ACCOUNT_CON_STRING' missing");
+
+            ExcludeLargeFiles = Environment.GetEnvironmentVariable("EXCLUDE_LARGE_FILES")?.ToLower() != "false";
         }
 
         public string Organization { get; }
@@ -56,6 +58,7 @@ namespace ms_continuus
         public int YearlyRetention { get; }
         public string GithubToken { get; }
         public string StorageAccountConnectionString { get; }
+        public bool ExcludeLargeFiles { get; }
 
         public override string ToString()
         {
@@ -66,8 +69,9 @@ namespace ms_continuus
             var weekRet = $"\n\tWEEKLY_RETENTION: {WeeklyRetention}";
             var monthRet = $"\n\tMONTHLY_RETENTION: {MonthlyRetention}";
             var yearRet = $"\n\tYEARLY_RETENTION: {YearlyRetention}";
+            var exclLargeFiles = $"\n\tEXCLUDE_LARGE_FILES: {ExcludeLargeFiles}";
 
-            return "Configuration settings:" + ghUrl + org + container + tag + weekRet + monthRet + yearRet;
+            return "Configuration settings:" + ghUrl + org + container + tag + weekRet + monthRet + yearRet + exclLargeFiles;
         }
     }
 }

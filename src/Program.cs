@@ -58,7 +58,7 @@ namespace ms_continuus
             return archivePath;
         }
 
-        private static async Task BackupArchive()
+        private static async Task BackupArchive(string runDate)
         {
             // Each migration can contain approx. 100~120 repositories
             // to keep the API from timing out. This also makes sense for retrying
@@ -148,7 +148,7 @@ namespace ms_continuus
             var failedForManifest = failedToMigrate2
                 .Select(kvp => (kvp.Value.Item1, kvp.Value.Item2))
                 .ToList();
-            await BlobStorage.UploadManifest(allRepositoryList, uploadedForManifest, failedForManifest);
+            await BlobStorage.UploadManifest(allRepositoryList, uploadedForManifest, failedForManifest, runDate);
         }
 
         private static async Task Main(string[] args)
@@ -158,7 +158,7 @@ namespace ms_continuus
             Console.WriteLine("Starting backup of Github organization");
             var startTime = DateTime.Now;
             await BlobStorage.EnsureContainer();
-            await BackupArchive();
+            await BackupArchive($"{startTime:yyyy_MM_dd}");
             await DeleteWeeklyBlobs();
             await DeleteMonthlyBlobs();
             await DeleteYearlyBlobs();

@@ -26,6 +26,7 @@ ms-continuus is configured entirely with environment variables.
   |YEARLY_RETENTION:|420|Delete blobs with retentionClass='yearly' older than n-days|
   |GITHUB_TOKEN:|null|Required: Github Personal Access Token|
   |STORAGE_ACCOUNT_CON_STRING:|null|Required: Azure StorageAccount ConnectionString|
+  |EXCLUDE_LARGE_FILES:|true|Exclude attachments and release assets from the migration archive to reduce file size|
 
 ## (TODO: Waiting for Blob Idex Tags Preview Feature)
 
