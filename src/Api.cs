@@ -187,7 +187,12 @@ namespace ms_continuus
 
         public async Task<Migration> StartMigration(List<string> repositoryList)
         {
-            var payload = $"{{\"repositories\": {JsonConvert.SerializeObject(repositoryList)}}}";
+            var payload = JsonConvert.SerializeObject(new
+            {
+                repositories = repositoryList,
+                exclude_attachments = Config.ExcludeLargeFiles,
+                exclude_releases = Config.ExcludeLargeFiles
+            });
             SetPreviewHeader();
             var response = await Client.PostAsync(_migrationsUrl, new StringContent(payload));
             response.EnsureSuccessStatusCode();
